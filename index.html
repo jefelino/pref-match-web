@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pref-match - Fair Assignment Matching</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script src="elm.js"></script>
+    <script>
+        var app = Elm.Main.init({
+            node: document.getElementById('app')
+        });
+
+        // Handle clipboard copy
+        app.ports.copyToClipboard.subscribe(function(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                console.log('Copied to clipboard!');
+            }).catch(function(err) {
+                console.error('Failed to copy:', err);
+            });
+        });
+    </script>
+</body>
+</html>
