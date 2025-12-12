@@ -268,11 +268,6 @@ viewInstructions =
             [ li [] [ text "Person A is fixed to Course 1 and cannot be assigned to Course 3" ]
             , li [] [ text "Person C cannot be assigned to Course 1" ]
             ]
-        , p [ class "example-note" ]
-            [ text "See the "
-            , a [ href "https://github.com/jefelino/pref-match#data-format", target "_blank" ] [ text "full documentation" ]
-            , text " for more details."
-            ]
         ]
 
 
