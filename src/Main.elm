@@ -379,17 +379,16 @@ viewSingleAssignment copyState index assignment =
                 Just AssignmentsCopied -> True
                 _ -> False
         
-        solutionHeader =
+        labelText =
             if index > 0 then
-                h2 [ class "solution-header" ] [ text ("Variation " ++ String.fromInt index) ]
+                "Variation " ++ String.fromInt index
             else
-                text ""
+                "Assignments"
     in
     div [ class "single-solution" ]
-        [ solutionHeader
-        , div [ class "results-content" ]
+        [ div [ class "results-content" ]
             [ div [ class "distribution-header" ]
-                [ h3 [ class "distribution-caption" ] [ text "Assignments" ]
+                [ h3 [ class "distribution-caption" ] [ text labelText ]
                 , div [ class "copy-container" ]
                     [ if showAssignmentCopied then
                         span [ class "copied-message" ] [ text "Copied!" ]
@@ -892,11 +891,6 @@ viewStyles =
         
         .single-solution {
             margin-bottom: 40px;
-        }
-        
-        .single-solution:not(:last-child) {
-            padding-bottom: 40px;
-            border-bottom: 3px solid #e1e4e8;
         }
         
         .solution-header {
