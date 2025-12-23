@@ -206,7 +206,7 @@ checkRankingValidity result =
                                     let
                                         gapN = Maybe.withDefault 0 firstGap
                                     in
-                                    [ person ++ " has included fewer than " 
+                                    [ person ++ " included fewer than " 
                                         ++ String.fromInt gapN 
                                         ++ " courses at rank " ++ String.fromInt gapN 
                                         ++ " or below. Ties have been renumbered." ]

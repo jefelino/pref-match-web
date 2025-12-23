@@ -4556,89 +4556,6 @@ function _File_toUrl(blob)
 	});
 }
 
-
-
-
-var _Bitwise_and = F2(function(a, b)
-{
-	return a & b;
-});
-
-var _Bitwise_or = F2(function(a, b)
-{
-	return a | b;
-});
-
-var _Bitwise_xor = F2(function(a, b)
-{
-	return a ^ b;
-});
-
-function _Bitwise_complement(a)
-{
-	return ~a;
-};
-
-var _Bitwise_shiftLeftBy = F2(function(offset, a)
-{
-	return a << offset;
-});
-
-var _Bitwise_shiftRightBy = F2(function(offset, a)
-{
-	return a >> offset;
-});
-
-var _Bitwise_shiftRightZfBy = F2(function(offset, a)
-{
-	return a >>> offset;
-});
-
-
-
-function _Time_now(millisToPosix)
-{
-	return _Scheduler_binding(function(callback)
-	{
-		callback(_Scheduler_succeed(millisToPosix(Date.now())));
-	});
-}
-
-var _Time_setInterval = F2(function(interval, task)
-{
-	return _Scheduler_binding(function(callback)
-	{
-		var id = setInterval(function() { _Scheduler_rawSpawn(task); }, interval);
-		return function() { clearInterval(id); };
-	});
-});
-
-function _Time_here()
-{
-	return _Scheduler_binding(function(callback)
-	{
-		callback(_Scheduler_succeed(
-			A2($elm$time$Time$customZone, -(new Date().getTimezoneOffset()), _List_Nil)
-		));
-	});
-}
-
-
-function _Time_getZoneName()
-{
-	return _Scheduler_binding(function(callback)
-	{
-		try
-		{
-			var name = $elm$time$Time$Name(Intl.DateTimeFormat().resolvedOptions().timeZone);
-		}
-		catch (e)
-		{
-			var name = $elm$time$Time$Offset(new Date().getTimezoneOffset());
-		}
-		callback(_Scheduler_succeed(name));
-	});
-}
 var $elm$core$Basics$EQ = {$: 'EQ'};
 var $elm$core$Basics$GT = {$: 'GT'};
 var $elm$core$Basics$LT = {$: 'LT'};
@@ -5434,11 +5351,162 @@ var $elm$core$Platform$Cmd$none = $elm$core$Platform$Cmd$batch(_List_Nil);
 var $author$project$Main$init = function (_v0) {
 	return _Utils_Tuple2($author$project$Main$NoResults, $elm$core$Platform$Cmd$none);
 };
+var $author$project$Main$Frame = function (a) {
+	return {$: 'Frame', a: a};
+};
+var $author$project$Solver$finished = function (_v0) {
+	var position = _v0.a.position;
+	if (position.$ === 'Finish') {
+		return true;
+	} else {
+		return false;
+	}
+};
 var $elm$core$Platform$Sub$batch = _Platform_batch;
 var $elm$core$Platform$Sub$none = $elm$core$Platform$Sub$batch(_List_Nil);
-var $author$project$Main$subscriptions = function (_v0) {
-	return $elm$core$Platform$Sub$none;
+var $elm$browser$Browser$AnimationManager$Time = function (a) {
+	return {$: 'Time', a: a};
 };
+var $elm$browser$Browser$AnimationManager$State = F3(
+	function (subs, request, oldTime) {
+		return {oldTime: oldTime, request: request, subs: subs};
+	});
+var $elm$browser$Browser$AnimationManager$init = $elm$core$Task$succeed(
+	A3($elm$browser$Browser$AnimationManager$State, _List_Nil, $elm$core$Maybe$Nothing, 0));
+var $elm$core$Process$kill = _Scheduler_kill;
+var $elm$browser$Browser$AnimationManager$now = _Browser_now(_Utils_Tuple0);
+var $elm$browser$Browser$AnimationManager$rAF = _Browser_rAF(_Utils_Tuple0);
+var $elm$core$Platform$sendToSelf = _Platform_sendToSelf;
+var $elm$core$Process$spawn = _Scheduler_spawn;
+var $elm$browser$Browser$AnimationManager$onEffects = F3(
+	function (router, subs, _v0) {
+		var request = _v0.request;
+		var oldTime = _v0.oldTime;
+		var _v1 = _Utils_Tuple2(request, subs);
+		if (_v1.a.$ === 'Nothing') {
+			if (!_v1.b.b) {
+				var _v2 = _v1.a;
+				return $elm$browser$Browser$AnimationManager$init;
+			} else {
+				var _v4 = _v1.a;
+				return A2(
+					$elm$core$Task$andThen,
+					function (pid) {
+						return A2(
+							$elm$core$Task$andThen,
+							function (time) {
+								return $elm$core$Task$succeed(
+									A3(
+										$elm$browser$Browser$AnimationManager$State,
+										subs,
+										$elm$core$Maybe$Just(pid),
+										time));
+							},
+							$elm$browser$Browser$AnimationManager$now);
+					},
+					$elm$core$Process$spawn(
+						A2(
+							$elm$core$Task$andThen,
+							$elm$core$Platform$sendToSelf(router),
+							$elm$browser$Browser$AnimationManager$rAF)));
+			}
+		} else {
+			if (!_v1.b.b) {
+				var pid = _v1.a.a;
+				return A2(
+					$elm$core$Task$andThen,
+					function (_v3) {
+						return $elm$browser$Browser$AnimationManager$init;
+					},
+					$elm$core$Process$kill(pid));
+			} else {
+				return $elm$core$Task$succeed(
+					A3($elm$browser$Browser$AnimationManager$State, subs, request, oldTime));
+			}
+		}
+	});
+var $elm$time$Time$Posix = function (a) {
+	return {$: 'Posix', a: a};
+};
+var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
+var $elm$browser$Browser$AnimationManager$onSelfMsg = F3(
+	function (router, newTime, _v0) {
+		var subs = _v0.subs;
+		var oldTime = _v0.oldTime;
+		var send = function (sub) {
+			if (sub.$ === 'Time') {
+				var tagger = sub.a;
+				return A2(
+					$elm$core$Platform$sendToApp,
+					router,
+					tagger(
+						$elm$time$Time$millisToPosix(newTime)));
+			} else {
+				var tagger = sub.a;
+				return A2(
+					$elm$core$Platform$sendToApp,
+					router,
+					tagger(newTime - oldTime));
+			}
+		};
+		return A2(
+			$elm$core$Task$andThen,
+			function (pid) {
+				return A2(
+					$elm$core$Task$andThen,
+					function (_v1) {
+						return $elm$core$Task$succeed(
+							A3(
+								$elm$browser$Browser$AnimationManager$State,
+								subs,
+								$elm$core$Maybe$Just(pid),
+								newTime));
+					},
+					$elm$core$Task$sequence(
+						A2($elm$core$List$map, send, subs)));
+			},
+			$elm$core$Process$spawn(
+				A2(
+					$elm$core$Task$andThen,
+					$elm$core$Platform$sendToSelf(router),
+					$elm$browser$Browser$AnimationManager$rAF)));
+	});
+var $elm$browser$Browser$AnimationManager$Delta = function (a) {
+	return {$: 'Delta', a: a};
+};
+var $elm$core$Basics$composeL = F3(
+	function (g, f, x) {
+		return g(
+			f(x));
+	});
+var $elm$browser$Browser$AnimationManager$subMap = F2(
+	function (func, sub) {
+		if (sub.$ === 'Time') {
+			var tagger = sub.a;
+			return $elm$browser$Browser$AnimationManager$Time(
+				A2($elm$core$Basics$composeL, func, tagger));
+		} else {
+			var tagger = sub.a;
+			return $elm$browser$Browser$AnimationManager$Delta(
+				A2($elm$core$Basics$composeL, func, tagger));
+		}
+	});
+_Platform_effectManagers['Browser.AnimationManager'] = _Platform_createManager($elm$browser$Browser$AnimationManager$init, $elm$browser$Browser$AnimationManager$onEffects, $elm$browser$Browser$AnimationManager$onSelfMsg, 0, $elm$browser$Browser$AnimationManager$subMap);
+var $elm$browser$Browser$AnimationManager$subscription = _Platform_leaf('Browser.AnimationManager');
+var $elm$browser$Browser$AnimationManager$onAnimationFrame = function (tagger) {
+	return $elm$browser$Browser$AnimationManager$subscription(
+		$elm$browser$Browser$AnimationManager$Time(tagger));
+};
+var $elm$browser$Browser$Events$onAnimationFrame = $elm$browser$Browser$AnimationManager$onAnimationFrame;
+var $author$project$Main$subscriptions = function (model) {
+	if (model.$ === 'ShowingResults') {
+		var state = model.a;
+		return $author$project$Solver$finished(state.searchState) ? $elm$core$Platform$Sub$none : $elm$browser$Browser$Events$onAnimationFrame($author$project$Main$Frame);
+	} else {
+		return $elm$core$Platform$Sub$none;
+	}
+};
+var $author$project$Main$AssignmentsCopied = {$: 'AssignmentsCopied'};
 var $author$project$Main$CopiedMessageHide = {$: 'CopiedMessageHide'};
 var $author$project$Main$FileLoaded = function (a) {
 	return {$: 'FileLoaded', a: a};
@@ -5449,256 +5517,93 @@ var $author$project$Main$FileSelected = function (a) {
 var $author$project$Main$ShowingError = function (a) {
 	return {$: 'ShowingError', a: a};
 };
-var $author$project$Main$ShowingResults = F3(
-	function (a, b, c) {
-		return {$: 'ShowingResults', a: a, b: b, c: c};
-	});
-var $author$project$Main$SolveCompleted = F2(
+var $author$project$Main$ShowingResults = function (a) {
+	return {$: 'ShowingResults', a: a};
+};
+var $author$project$Main$SummaryCopied = {$: 'SummaryCopied'};
+var $author$project$Solver$SearchState = function (a) {
+	return {$: 'SearchState', a: a};
+};
+var $author$project$Solver$Step = F2(
 	function (a, b) {
-		return {$: 'SolveCompleted', a: a, b: b};
+		return {$: 'Step', a: a, b: b};
 	});
-var $author$project$Main$SummaryCopiedMessageHide = {$: 'SummaryCopiedMessageHide'};
-var $elm$json$Json$Encode$string = _Json_wrap;
-var $author$project$Main$copyToClipboard = _Platform_outgoingPort('copyToClipboard', $elm$json$Json$Encode$string);
-var $elm$time$Time$Posix = function (a) {
-	return {$: 'Posix', a: a};
-};
-var $elm$time$Time$millisToPosix = $elm$time$Time$Posix;
-var $elm$file$File$Select$file = F2(
-	function (mimes, toMsg) {
-		return A2(
-			$elm$core$Task$perform,
-			toMsg,
-			_File_uploadOne(mimes));
-	});
-var $author$project$Main$formatAssignmentsForCopy = function (assignments) {
-	var header = 'Course,Person,Preference Rank';
-	var formatAssignmentRow = function (a) {
-		return a.course + (',' + (a.person + (',' + function () {
-			var _v0 = a.rank;
-			if (_v0.$ === 'Just') {
-				var r = _v0.a;
-				return $elm$core$String$fromInt(r);
-			} else {
-				return 'N/A';
-			}
-		}())));
-	};
-	var rows = A2($elm$core$List$map, formatAssignmentRow, assignments);
-	return A2(
-		$elm$core$String$join,
-		'\n',
-		A2($elm$core$List$cons, header, rows));
-};
-var $elm$core$Basics$ge = _Utils_ge;
-var $elm$core$Basics$modBy = _Basics_modBy;
-var $author$project$Main$ordinal = function (n) {
-	var suffix = function () {
-		if ((A2($elm$core$Basics$modBy, 100, n) >= 11) && (A2($elm$core$Basics$modBy, 100, n) <= 13)) {
-			return 'th';
-		} else {
-			var _v0 = A2($elm$core$Basics$modBy, 10, n);
-			switch (_v0) {
-				case 1:
-					return 'st';
-				case 2:
-					return 'nd';
-				case 3:
-					return 'rd';
-				default:
-					return 'th';
-			}
-		}
-	}();
-	return _Utils_ap(
-		$elm$core$String$fromInt(n),
-		suffix);
-};
-var $author$project$Main$pluralize = F3(
-	function (n, singular, plural) {
-		return (n === 1) ? singular : plural;
-	});
-var $author$project$Main$formatDistributionForCopy = function (distribution) {
-	var formatDistRow = function (d) {
-		return $author$project$Main$ordinal(d.rank) + (' choice: ' + ($elm$core$String$fromInt(d.count) + (' ' + A3($author$project$Main$pluralize, d.count, 'person', 'people'))));
-	};
-	return A2(
-		$elm$core$String$join,
-		'\n',
-		A2($elm$core$List$map, formatDistRow, distribution));
-};
-var $elm$random$Random$Generate = function (a) {
-	return {$: 'Generate', a: a};
-};
-var $elm$random$Random$Seed = F2(
-	function (a, b) {
-		return {$: 'Seed', a: a, b: b};
-	});
-var $elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
-var $elm$random$Random$next = function (_v0) {
-	var state0 = _v0.a;
-	var incr = _v0.b;
-	return A2($elm$random$Random$Seed, ((state0 * 1664525) + incr) >>> 0, incr);
-};
-var $elm$random$Random$initialSeed = function (x) {
-	var _v0 = $elm$random$Random$next(
-		A2($elm$random$Random$Seed, 0, 1013904223));
-	var state1 = _v0.a;
-	var incr = _v0.b;
-	var state2 = (state1 + x) >>> 0;
-	return $elm$random$Random$next(
-		A2($elm$random$Random$Seed, state2, incr));
-};
-var $elm$time$Time$Name = function (a) {
-	return {$: 'Name', a: a};
-};
-var $elm$time$Time$Offset = function (a) {
-	return {$: 'Offset', a: a};
-};
-var $elm$time$Time$Zone = F2(
-	function (a, b) {
-		return {$: 'Zone', a: a, b: b};
-	});
-var $elm$time$Time$customZone = $elm$time$Time$Zone;
-var $elm$time$Time$now = _Time_now($elm$time$Time$millisToPosix);
-var $elm$time$Time$posixToMillis = function (_v0) {
-	var millis = _v0.a;
-	return millis;
-};
-var $elm$random$Random$init = A2(
-	$elm$core$Task$andThen,
-	function (time) {
-		return $elm$core$Task$succeed(
-			$elm$random$Random$initialSeed(
-				$elm$time$Time$posixToMillis(time)));
-	},
-	$elm$time$Time$now);
-var $elm$random$Random$step = F2(
-	function (_v0, seed) {
-		var generator = _v0.a;
-		return generator(seed);
-	});
-var $elm$random$Random$onEffects = F3(
-	function (router, commands, seed) {
-		if (!commands.b) {
-			return $elm$core$Task$succeed(seed);
-		} else {
-			var generator = commands.a.a;
-			var rest = commands.b;
-			var _v1 = A2($elm$random$Random$step, generator, seed);
-			var value = _v1.a;
-			var newSeed = _v1.b;
-			return A2(
-				$elm$core$Task$andThen,
-				function (_v2) {
-					return A3($elm$random$Random$onEffects, router, rest, newSeed);
-				},
-				A2($elm$core$Platform$sendToApp, router, value));
-		}
-	});
-var $elm$random$Random$onSelfMsg = F3(
-	function (_v0, _v1, seed) {
-		return $elm$core$Task$succeed(seed);
-	});
-var $elm$random$Random$Generator = function (a) {
-	return {$: 'Generator', a: a};
-};
-var $elm$random$Random$map = F2(
-	function (func, _v0) {
-		var genA = _v0.a;
-		return $elm$random$Random$Generator(
-			function (seed0) {
-				var _v1 = genA(seed0);
-				var a = _v1.a;
-				var seed1 = _v1.b;
-				return _Utils_Tuple2(
-					func(a),
-					seed1);
-			});
-	});
-var $elm$random$Random$cmdMap = F2(
-	function (func, _v0) {
-		var generator = _v0.a;
-		return $elm$random$Random$Generate(
-			A2($elm$random$Random$map, func, generator));
-	});
-_Platform_effectManagers['Random'] = _Platform_createManager($elm$random$Random$init, $elm$random$Random$onEffects, $elm$random$Random$onSelfMsg, $elm$random$Random$cmdMap);
-var $elm$random$Random$command = _Platform_leaf('Random');
-var $elm$random$Random$generate = F2(
-	function (tagger, generator) {
-		return $elm$random$Random$command(
-			$elm$random$Random$Generate(
-				A2($elm$random$Random$map, tagger, generator)));
-	});
-var $elm$core$Basics$composeL = F3(
-	function (g, f, x) {
-		return g(
-			f(x));
-	});
-var $elm$core$List$filter = F2(
-	function (isGood, list) {
-		return A3(
-			$elm$core$List$foldr,
-			F2(
-				function (x, xs) {
-					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
-				}),
-			_List_Nil,
-			list);
-	});
-var $elm$core$String$lines = _String_lines;
-var $elm$core$Basics$not = _Basics_not;
-var $elm$core$List$drop = F2(
-	function (n, list) {
-		drop:
+var $elm$core$List$any = F2(
+	function (isOkay, list) {
+		any:
 		while (true) {
-			if (n <= 0) {
-				return list;
+			if (!list.b) {
+				return false;
 			} else {
-				if (!list.b) {
-					return list;
+				var x = list.a;
+				var xs = list.b;
+				if (isOkay(x)) {
+					return true;
 				} else {
-					var x = list.a;
-					var xs = list.b;
-					var $temp$n = n - 1,
+					var $temp$isOkay = isOkay,
 						$temp$list = xs;
-					n = $temp$n;
+					isOkay = $temp$isOkay;
 					list = $temp$list;
-					continue drop;
+					continue any;
 				}
 			}
 		}
+	});
+var $elm$core$Basics$not = _Basics_not;
+var $elm$core$List$all = F2(
+	function (isOkay, list) {
+		return !A2(
+			$elm$core$List$any,
+			A2($elm$core$Basics$composeL, $elm$core$Basics$not, isOkay),
+			list);
 	});
 var $elm$core$Basics$composeR = F3(
 	function (f, g, x) {
 		return g(
 			f(x));
 	});
-var $elm$core$List$maybeCons = F3(
-	function (f, mx, xs) {
-		var _v0 = f(mx);
-		if (_v0.$ === 'Just') {
-			var x = _v0.a;
-			return A2($elm$core$List$cons, x, xs);
-		} else {
-			return xs;
+var $author$project$Util$MyMaybe$test = F2(
+	function (predicate, value) {
+		return predicate(value) ? $elm$core$Maybe$Just(value) : $elm$core$Maybe$Nothing;
+	});
+var $elm$core$Basics$compare = _Utils_compare;
+var $elm$core$Dict$get = F2(
+	function (targetKey, dict) {
+		get:
+		while (true) {
+			if (dict.$ === 'RBEmpty_elm_builtin') {
+				return $elm$core$Maybe$Nothing;
+			} else {
+				var key = dict.b;
+				var value = dict.c;
+				var left = dict.d;
+				var right = dict.e;
+				var _v1 = A2($elm$core$Basics$compare, targetKey, key);
+				switch (_v1.$) {
+					case 'LT':
+						var $temp$targetKey = targetKey,
+							$temp$dict = left;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+					case 'EQ':
+						return $elm$core$Maybe$Just(value);
+					default:
+						var $temp$targetKey = targetKey,
+							$temp$dict = right;
+						targetKey = $temp$targetKey;
+						dict = $temp$dict;
+						continue get;
+				}
+			}
 		}
 	});
-var $elm$core$List$filterMap = F2(
-	function (f, xs) {
-		return A3(
-			$elm$core$List$foldr,
-			$elm$core$List$maybeCons(f),
-			_List_Nil,
-			xs);
-	});
-var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
-var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
 var $elm$core$Dict$Black = {$: 'Black'};
 var $elm$core$Dict$RBNode_elm_builtin = F5(
 	function (a, b, c, d, e) {
 		return {$: 'RBNode_elm_builtin', a: a, b: b, c: c, d: d, e: e};
 	});
+var $elm$core$Dict$RBEmpty_elm_builtin = {$: 'RBEmpty_elm_builtin'};
 var $elm$core$Dict$Red = {$: 'Red'};
 var $elm$core$Dict$balance = F5(
 	function (color, key, value, left, right) {
@@ -5754,7 +5659,6 @@ var $elm$core$Dict$balance = F5(
 			}
 		}
 	});
-var $elm$core$Basics$compare = _Utils_compare;
 var $elm$core$Dict$insertHelp = F3(
 	function (key, value, dict) {
 		if (dict.$ === 'RBEmpty_elm_builtin') {
@@ -5801,283 +5705,6 @@ var $elm$core$Dict$insert = F3(
 		} else {
 			var x = _v0;
 			return x;
-		}
-	});
-var $elm$core$Dict$fromList = function (assocs) {
-	return A3(
-		$elm$core$List$foldl,
-		F2(
-			function (_v0, dict) {
-				var key = _v0.a;
-				var value = _v0.b;
-				return A3($elm$core$Dict$insert, key, value, dict);
-			}),
-		$elm$core$Dict$empty,
-		assocs);
-};
-var $elm$core$List$isEmpty = function (xs) {
-	if (!xs.b) {
-		return true;
-	} else {
-		return false;
-	}
-};
-var $elm$core$Basics$neq = _Utils_notEqual;
-var $elm$core$Tuple$pair = F2(
-	function (a, b) {
-		return _Utils_Tuple2(a, b);
-	});
-var $author$project$CsvParser$splitCsv = function (line) {
-	return A2($elm$core$String$split, ',', line);
-};
-var $elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return $elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return $elm$core$Maybe$Nothing;
-		}
-	});
-var $author$project$CsvParser$toCourseEntry = function (_v0) {
-	var name = _v0.a;
-	var maybeSlots = _v0.b;
-	return A2(
-		$elm$core$Maybe$map,
-		function (slots) {
-			return _Utils_Tuple2(name, slots);
-		},
-		maybeSlots);
-};
-var $elm$core$String$trim = _String_trim;
-var $author$project$CsvParser$parseCourses = F2(
-	function (courseRow, slotRow) {
-		var slotCounts = A2(
-			$elm$core$List$map,
-			A2($elm$core$Basics$composeR, $elm$core$String$trim, $elm$core$String$toInt),
-			A2(
-				$elm$core$List$drop,
-				1,
-				$author$project$CsvParser$splitCsv(slotRow)));
-		var courseNames = A2(
-			$elm$core$List$map,
-			$elm$core$String$trim,
-			A2(
-				$elm$core$List$drop,
-				1,
-				$author$project$CsvParser$splitCsv(courseRow)));
-		if (!_Utils_eq(
-			$elm$core$List$length(courseNames),
-			$elm$core$List$length(slotCounts))) {
-			return $elm$core$Result$Err('Number of courses doesn\'t match number of slot values');
-		} else {
-			var combined = A3($elm$core$List$map2, $elm$core$Tuple$pair, courseNames, slotCounts);
-			var invalidSlots = A2(
-				$elm$core$List$filter,
-				function (_v0) {
-					var slot = _v0.b;
-					return _Utils_eq(slot, $elm$core$Maybe$Nothing);
-				},
-				combined);
-			return (!$elm$core$List$isEmpty(invalidSlots)) ? $elm$core$Result$Err('Invalid slot count (must be a number)') : $elm$core$Result$Ok(
-				$elm$core$Dict$fromList(
-					A2($elm$core$List$filterMap, $author$project$CsvParser$toCourseEntry, combined)));
-		}
-	});
-var $author$project$CsvParser$combineResults = function (results) {
-	return A3(
-		$elm$core$List$foldr,
-		F2(
-			function (result, acc) {
-				var _v0 = _Utils_Tuple2(result, acc);
-				if (_v0.a.$ === 'Ok') {
-					if (_v0.b.$ === 'Ok') {
-						var value = _v0.a.a;
-						var values = _v0.b.a;
-						return $elm$core$Result$Ok(
-							A2($elm$core$List$cons, value, values));
-					} else {
-						var err = _v0.b.a;
-						return $elm$core$Result$Err(err);
-					}
-				} else {
-					var err = _v0.a.a;
-					return $elm$core$Result$Err(err);
-				}
-			}),
-		$elm$core$Result$Ok(_List_Nil),
-		results);
-};
-var $elm$core$List$append = F2(
-	function (xs, ys) {
-		if (!ys.b) {
-			return xs;
-		} else {
-			return A3($elm$core$List$foldr, $elm$core$List$cons, ys, xs);
-		}
-	});
-var $elm$core$List$concat = function (lists) {
-	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
-};
-var $elm$core$Result$map = F2(
-	function (func, ra) {
-		if (ra.$ === 'Ok') {
-			var a = ra.a;
-			return $elm$core$Result$Ok(
-				func(a));
-		} else {
-			var e = ra.a;
-			return $elm$core$Result$Err(e);
-		}
-	});
-var $author$project$CsvParser$parsePreference = F3(
-	function (personName, courseName, prefString) {
-		var trimmed = $elm$core$String$trim(prefString);
-		var isNegative = A2($elm$core$String$startsWith, '-', trimmed);
-		var isFixed = A2($elm$core$String$startsWith, '*', trimmed);
-		var rankString = isFixed ? A2($elm$core$String$dropLeft, 1, trimmed) : (isNegative ? A2($elm$core$String$dropLeft, 1, trimmed) : trimmed);
-		if (isNegative) {
-			return $elm$core$Result$Ok($elm$core$Maybe$Nothing);
-		} else {
-			var _v0 = $elm$core$String$toInt(rankString);
-			if (_v0.$ === 'Just') {
-				var rank = _v0.a;
-				return $elm$core$Result$Ok(
-					$elm$core$Maybe$Just(
-						_Utils_Tuple2(
-							_Utils_Tuple2(personName, courseName),
-							{fixed: isFixed, rank: rank})));
-			} else {
-				return $elm$core$Result$Err('Invalid preference rank: ' + prefString);
-			}
-		}
-	});
-var $author$project$CsvParser$parsePersonPreferences = F2(
-	function (courseNames, row) {
-		var values = $author$project$CsvParser$splitCsv(row);
-		if (!values.b) {
-			return $elm$core$Result$Err('Empty row');
-		} else {
-			var name = values.a;
-			var preferenceStrings = values.b;
-			if (!_Utils_eq(
-				$elm$core$List$length(courseNames),
-				$elm$core$List$length(preferenceStrings))) {
-				return $elm$core$Result$Err('Number of preferences doesn\'t match number of courses');
-			} else {
-				var personName = $elm$core$String$trim(name);
-				return A2(
-					$elm$core$Result$map,
-					$elm$core$List$filterMap($elm$core$Basics$identity),
-					$author$project$CsvParser$combineResults(
-						A3(
-							$elm$core$List$map2,
-							$author$project$CsvParser$parsePreference(personName),
-							courseNames,
-							preferenceStrings)));
-			}
-		}
-	});
-var $author$project$CsvParser$parsePeoplePreferences = F2(
-	function (courseNames, peopleRows) {
-		return A2(
-			$elm$core$Result$map,
-			A2($elm$core$Basics$composeR, $elm$core$List$concat, $elm$core$Dict$fromList),
-			$author$project$CsvParser$combineResults(
-				A2(
-					$elm$core$List$map,
-					$author$project$CsvParser$parsePersonPreferences(courseNames),
-					peopleRows)));
-	});
-var $author$project$CsvParser$parseCsvRows = F3(
-	function (courseRow, slotRow, peopleRows) {
-		var coursesResult = A2($author$project$CsvParser$parseCourses, courseRow, slotRow);
-		var courseNames = A2(
-			$elm$core$List$map,
-			$elm$core$String$trim,
-			A2(
-				$elm$core$List$drop,
-				1,
-				$author$project$CsvParser$splitCsv(courseRow)));
-		var preferencesResult = A2($author$project$CsvParser$parsePeoplePreferences, courseNames, peopleRows);
-		var _v0 = _Utils_Tuple2(coursesResult, preferencesResult);
-		if (_v0.a.$ === 'Ok') {
-			if (_v0.b.$ === 'Ok') {
-				var courses = _v0.a.a;
-				var preferences = _v0.b.a;
-				return $elm$core$Result$Ok(
-					{courses: courses, preferences: preferences});
-			} else {
-				var err = _v0.b.a;
-				return $elm$core$Result$Err(err);
-			}
-		} else {
-			var err = _v0.a.a;
-			return $elm$core$Result$Err(err);
-		}
-	});
-var $author$project$CsvParser$parse = function (csvContent) {
-	var lines = A2(
-		$elm$core$List$filter,
-		A2($elm$core$Basics$composeL, $elm$core$Basics$not, $elm$core$String$isEmpty),
-		A2(
-			$elm$core$List$map,
-			$elm$core$String$trim,
-			$elm$core$String$lines(csvContent)));
-	if (lines.b && lines.b.b) {
-		var courseRow = lines.a;
-		var _v1 = lines.b;
-		var slotRow = _v1.a;
-		var peopleRows = _v1.b;
-		return A3($author$project$CsvParser$parseCsvRows, courseRow, slotRow, peopleRows);
-	} else {
-		return $elm$core$Result$Err('CSV must have at least 2 rows (courses and slots)');
-	}
-};
-var $elm$core$Process$sleep = _Process_sleep;
-var $elm$random$Random$andThen = F2(
-	function (callback, _v0) {
-		var genA = _v0.a;
-		return $elm$random$Random$Generator(
-			function (seed) {
-				var _v1 = genA(seed);
-				var result = _v1.a;
-				var newSeed = _v1.b;
-				var _v2 = callback(result);
-				var genB = _v2.a;
-				return genB(newSeed);
-			});
-	});
-var $elm$core$Dict$get = F2(
-	function (targetKey, dict) {
-		get:
-		while (true) {
-			if (dict.$ === 'RBEmpty_elm_builtin') {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var key = dict.b;
-				var value = dict.c;
-				var left = dict.d;
-				var right = dict.e;
-				var _v1 = A2($elm$core$Basics$compare, targetKey, key);
-				switch (_v1.$) {
-					case 'LT':
-						var $temp$targetKey = targetKey,
-							$temp$dict = left;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-					case 'EQ':
-						return $elm$core$Maybe$Just(value);
-					default:
-						var $temp$targetKey = targetKey,
-							$temp$dict = right;
-						targetKey = $temp$targetKey;
-						dict = $temp$dict;
-						continue get;
-				}
-			}
 		}
 	});
 var $elm$core$Dict$getMin = function (dict) {
@@ -6453,125 +6080,40 @@ var $elm$core$Dict$update = F3(
 			return A2($elm$core$Dict$remove, targetKey, dictionary);
 		}
 	});
-var $author$project$Matching$preferenceDistribution = function (rankings) {
-	var _v0 = A3(
-		$elm$core$List$foldl,
-		F2(
-			function (maybeRank, _v1) {
-				var accDist = _v1.a;
-				var accNothings = _v1.b;
-				if (maybeRank.$ === 'Nothing') {
-					return _Utils_Tuple2(accDist, accNothings + 1);
-				} else {
-					var rank = maybeRank.a;
-					var newDist = A3(
-						$elm$core$Dict$update,
-						rank,
-						function (maybeCount) {
-							if (maybeCount.$ === 'Nothing') {
-								return $elm$core$Maybe$Just(1);
-							} else {
-								var count = maybeCount.a;
-								return $elm$core$Maybe$Just(count + 1);
-							}
-						},
-						accDist);
-					return _Utils_Tuple2(newDist, accNothings);
-				}
-			}),
-		_Utils_Tuple2($elm$core$Dict$empty, 0),
-		rankings);
-	var dist = _v0.a;
-	var nothingCount = _v0.b;
-	return _Utils_Tuple2(dist, nothingCount);
-};
-var $author$project$Matching$ranks = F2(
-	function (_v0, assignment) {
-		var preferences = _v0.preferences;
-		return A2(
-			$elm$core$List$map,
-			function (_v1) {
-				var person = _v1.a;
-				var course = _v1.b;
-				return A2(
-					$elm$core$Maybe$map,
-					function ($) {
-						return $.rank;
-					},
-					A2(
-						$elm$core$Dict$get,
-						_Utils_Tuple2(person, course),
-						preferences));
-			},
-			$elm$core$Dict$toList(assignment));
-	});
-var $elm$core$List$sortBy = _List_sortBy;
-var $author$project$Matching$assignmentToResults = F2(
-	function (inputData, assignment) {
-		var assignmentRecords = A2(
-			$elm$core$List$sortBy,
-			function (r) {
-				return _Utils_Tuple2(r.course, r.person);
-			},
-			A2(
-				$elm$core$List$map,
-				function (_v2) {
-					var person = _v2.a;
-					var course = _v2.b;
-					return {
-						course: course,
-						person: person,
-						rank: A2(
-							$elm$core$Maybe$map,
-							function ($) {
-								return $.rank;
-							},
-							A2(
-								$elm$core$Dict$get,
-								_Utils_Tuple2(person, course),
-								inputData.preferences))
-					};
-				},
-				$elm$core$Dict$toList(assignment)));
-		var _v0 = $author$project$Matching$preferenceDistribution(
-			A2($author$project$Matching$ranks, inputData, assignment));
-		var dist = _v0.a;
-		var distributionRecords = A2(
-			$elm$core$List$sortBy,
-			function ($) {
-				return $.rank;
-			},
-			A2(
-				$elm$core$List$map,
-				function (_v1) {
-					var rank = _v1.a;
-					var count = _v1.b;
-					return {count: count, rank: rank};
-				},
-				$elm$core$Dict$toList(dist)));
-		return {assignments: assignmentRecords, distribution: distributionRecords};
-	});
-var $author$project$MyList$find = F2(
-	function (f, list) {
-		find:
-		while (true) {
-			if (!list.b) {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var x = list.a;
-				var xs = list.b;
-				if (f(x)) {
-					return $elm$core$Maybe$Just(x);
-				} else {
-					var $temp$f = f,
-						$temp$list = xs;
-					f = $temp$f;
-					list = $temp$list;
-					continue find;
-				}
-			}
+var $elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
 		}
 	});
+var $author$project$Dist$add = F3(
+	function (key, n, dist) {
+		return A3(
+			$elm$core$Dict$update,
+			key,
+			A2(
+				$elm$core$Basics$composeR,
+				$elm$core$Maybe$withDefault(0),
+				A2(
+					$elm$core$Basics$composeR,
+					$elm$core$Basics$add(n),
+					$author$project$Util$MyMaybe$test(
+						function (k) {
+							return k > 0;
+						}))),
+			dist);
+	});
+var $elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var $author$project$Dist$decrement = F2(
+	function (key, dist) {
+		return A3($author$project$Dist$add, key, -1, dist);
+	});
+var $elm$core$Dict$empty = $elm$core$Dict$RBEmpty_elm_builtin;
 var $elm$core$Dict$foldl = F3(
 	function (func, acc, dict) {
 		foldl:
@@ -6597,6 +6139,100 @@ var $elm$core$Dict$foldl = F3(
 			}
 		}
 	});
+var $elm$core$Dict$filter = F2(
+	function (isGood, dict) {
+		return A3(
+			$elm$core$Dict$foldl,
+			F3(
+				function (k, v, d) {
+					return A2(isGood, k, v) ? A3($elm$core$Dict$insert, k, v, d) : d;
+				}),
+			$elm$core$Dict$empty,
+			dict);
+	});
+var $author$project$Dist$get = F2(
+	function (key, dist) {
+		return A2(
+			$elm$core$Maybe$withDefault,
+			0,
+			A2($elm$core$Dict$get, key, dist));
+	});
+var $elm$core$Basics$neq = _Utils_notEqual;
+var $author$project$Solver$assign = F4(
+	function (person, course, rank, space) {
+		var newSlots = A2($author$project$Dist$decrement, course, space.slots);
+		var newPrefs = A2(
+			$elm$core$Dict$filter,
+			F2(
+				function (_v0, _v1) {
+					var p = _v0.a;
+					var c = _v0.b;
+					return (!_Utils_eq(p, person)) && (A2($author$project$Dist$get, c, newSlots) > 0);
+				}),
+			space.preferences);
+		var newAssignment = A3(
+			$elm$core$Dict$insert,
+			person,
+			_Utils_Tuple2(course, rank),
+			space.assignment);
+		return {assignment: newAssignment, preferences: newPrefs, slots: newSlots};
+	});
+var $author$project$Dist$empty = $elm$core$Dict$empty;
+var $author$project$Dist$increment = F2(
+	function (key, dist) {
+		return A3($author$project$Dist$add, key, 1, dist);
+	});
+var $author$project$Dist$count = function (items) {
+	return A3($elm$core$List$foldl, $author$project$Dist$increment, $author$project$Dist$empty, items);
+};
+var $elm$core$Tuple$second = function (_v0) {
+	var y = _v0.b;
+	return y;
+};
+var $elm$core$Dict$values = function (dict) {
+	return A3(
+		$elm$core$Dict$foldr,
+		F3(
+			function (key, value, valueList) {
+				return A2($elm$core$List$cons, value, valueList);
+			}),
+		_List_Nil,
+		dict);
+};
+var $author$project$Matching$assignmentToDist = function (assignment) {
+	return $author$project$Dist$count(
+		A2(
+			$elm$core$List$map,
+			$elm$core$Tuple$second,
+			$elm$core$Dict$values(assignment)));
+};
+var $author$project$Solver$assignmentToResult = function (assignment) {
+	return $elm$core$Maybe$Just(
+		_Utils_Tuple2(
+			$author$project$Matching$assignmentToDist(assignment),
+			_List_fromArray(
+				[assignment])));
+};
+var $elm$core$List$filter = F2(
+	function (isGood, list) {
+		return A3(
+			$elm$core$List$foldr,
+			F2(
+				function (x, xs) {
+					return isGood(x) ? A2($elm$core$List$cons, x, xs) : xs;
+				}),
+			_List_Nil,
+			list);
+	});
+var $elm$core$List$head = function (list) {
+	if (list.b) {
+		var x = list.a;
+		var xs = list.b;
+		return $elm$core$Maybe$Just(x);
+	} else {
+		return $elm$core$Maybe$Nothing;
+	}
+};
 var $elm$core$Dict$merge = F6(
 	function (leftStep, bothStep, rightStep, leftDict, rightDict, initialResult) {
 		var stepState = F3(
@@ -6658,15 +6294,6 @@ var $elm$core$Dict$merge = F6(
 			intermediateResult,
 			leftovers);
 	});
-var $elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
-	});
 var $author$project$Matching$compareLex = F2(
 	function (distA, distB) {
 		var comparisons = A6(
@@ -6675,21 +6302,21 @@ var $author$project$Matching$compareLex = F2(
 				function (_v0, countA, acc) {
 					return A2(
 						$elm$core$List$cons,
-						A2($elm$core$Basics$compare, 0, countA),
+						A2($elm$core$Basics$compare, countA, 0),
 						acc);
 				}),
 			F4(
 				function (_v1, countA, countB, acc) {
 					return A2(
 						$elm$core$List$cons,
-						A2($elm$core$Basics$compare, countB, countA),
+						A2($elm$core$Basics$compare, countA, countB),
 						acc);
 				}),
 			F3(
 				function (_v2, countB, acc) {
 					return A2(
 						$elm$core$List$cons,
-						A2($elm$core$Basics$compare, countB, 0),
+						A2($elm$core$Basics$compare, 0, countB),
 						acc);
 				}),
 			distA,
@@ -6698,665 +6325,620 @@ var $author$project$Matching$compareLex = F2(
 		return A2(
 			$elm$core$Maybe$withDefault,
 			$elm$core$Basics$EQ,
-			A2(
-				$author$project$MyList$find,
-				function (ord) {
-					return !_Utils_eq(ord, $elm$core$Basics$EQ);
-				},
-				comparisons));
+			$elm$core$List$head(
+				A2(
+					$elm$core$List$filter,
+					function (ord) {
+						return !_Utils_eq(ord, $elm$core$Basics$EQ);
+					},
+					comparisons)));
 	});
-var $author$project$Matching$compareDist = F2(
-	function (_v0, _v1) {
-		var distA = _v0.a;
-		var nothingsA = _v0.b;
-		var distB = _v1.a;
-		var nothingsB = _v1.b;
-		var _v2 = A2($elm$core$Basics$compare, nothingsA, nothingsB);
-		switch (_v2.$) {
-			case 'LT':
-				return $elm$core$Basics$GT;
-			case 'GT':
-				return $elm$core$Basics$LT;
-			default:
-				return A2($author$project$Matching$compareLex, distA, distB);
-		}
-	});
-var $elm$random$Random$constant = function (value) {
-	return $elm$random$Random$Generator(
-		function (seed) {
-			return _Utils_Tuple2(value, seed);
-		});
-};
-var $elm$core$List$concatMap = F2(
-	function (f, list) {
-		return $elm$core$List$concat(
-			A2($elm$core$List$map, f, list));
-	});
-var $author$project$MyList$findMap = F2(
-	function (f, list) {
-		findMap:
-		while (true) {
-			if (!list.b) {
+var $author$project$Matching$joinResults = F2(
+	function (r1, r2) {
+		var _v0 = _Utils_Tuple2(r1, r2);
+		if (_v0.a.$ === 'Nothing') {
+			if (_v0.b.$ === 'Nothing') {
+				var _v1 = _v0.a;
+				var _v2 = _v0.b;
 				return $elm$core$Maybe$Nothing;
 			} else {
-				var x = list.a;
-				var xs = list.b;
-				var _v1 = f(x);
-				if (_v1.$ === 'Just') {
-					var y = _v1.a;
-					return $elm$core$Maybe$Just(y);
-				} else {
-					var $temp$f = f,
-						$temp$list = xs;
-					f = $temp$f;
-					list = $temp$list;
-					continue findMap;
+				var _v4 = _v0.a;
+				var r2val = _v0.b;
+				return r2val;
+			}
+		} else {
+			if (_v0.b.$ === 'Nothing') {
+				var r1val = _v0.a;
+				var _v3 = _v0.b;
+				return r1val;
+			} else {
+				var _v5 = _v0.a.a;
+				var dist1 = _v5.a;
+				var assignments1 = _v5.b;
+				var _v6 = _v0.b.a;
+				var dist2 = _v6.a;
+				var assignments2 = _v6.b;
+				var _v7 = A2($author$project$Matching$compareLex, dist1, dist2);
+				switch (_v7.$) {
+					case 'GT':
+						return $elm$core$Maybe$Just(
+							_Utils_Tuple2(dist2, assignments2));
+					case 'LT':
+						return $elm$core$Maybe$Just(
+							_Utils_Tuple2(dist1, assignments1));
+					default:
+						return $elm$core$Maybe$Just(
+							_Utils_Tuple2(
+								dist1,
+								_Utils_ap(assignments1, assignments2)));
 				}
 			}
 		}
 	});
-var $author$project$Matching$compareLeximin = F2(
-	function (rankings1, rankings2) {
-		var _v0 = $author$project$Matching$preferenceDistribution(rankings2);
-		var dist2 = _v0.a;
-		var nothings2 = _v0.b;
-		var _v1 = $author$project$Matching$preferenceDistribution(rankings1);
-		var dist1 = _v1.a;
-		var nothings1 = _v1.b;
-		var _v2 = A2($elm$core$Basics$compare, nothings1, nothings2);
-		switch (_v2.$) {
-			case 'LT':
-				return $elm$core$Basics$GT;
-			case 'GT':
-				return $elm$core$Basics$LT;
-			default:
-				return A2($author$project$Matching$compareLex, dist1, dist2);
+var $author$project$Solver$prune = F2(
+	function (resultSoFar, maybeBestPossible) {
+		var _v0 = _Utils_Tuple2(resultSoFar, maybeBestPossible);
+		if (_v0.b.$ === 'Nothing') {
+			var _v1 = _v0.b;
+			return true;
+		} else {
+			if (_v0.a.$ === 'Nothing') {
+				var _v2 = _v0.a;
+				return false;
+			} else {
+				var _v3 = _v0.a.a;
+				var bestSoFar = _v3.a;
+				var best = _v0.b.a;
+				return _Utils_eq(
+					A2($author$project$Matching$compareLex, best, bestSoFar),
+					$elm$core$Basics$GT);
+			}
 		}
 	});
-var $author$project$Matching$trySwap = F4(
-	function (inputData, assignment, person1, person2) {
-		var _v0 = _Utils_Tuple2(
-			A2($elm$core$Dict$get, person1, assignment),
-			A2($elm$core$Dict$get, person2, assignment));
-		if ((_v0.a.$ === 'Just') && (_v0.b.$ === 'Just')) {
-			var course1 = _v0.a.a;
-			var course2 = _v0.b.a;
-			if (_Utils_eq(course1, course2)) {
-				return $elm$core$Maybe$Nothing;
-			} else {
-				var rank2Old = A2(
-					$elm$core$Maybe$map,
-					function ($) {
-						return $.rank;
-					},
-					A2(
-						$elm$core$Dict$get,
-						_Utils_Tuple2(person2, course2),
-						inputData.preferences));
-				var rank2New = A2(
-					$elm$core$Maybe$map,
-					function ($) {
-						return $.rank;
-					},
-					A2(
-						$elm$core$Dict$get,
-						_Utils_Tuple2(person2, course1),
-						inputData.preferences));
-				var rank1Old = A2(
-					$elm$core$Maybe$map,
-					function ($) {
-						return $.rank;
-					},
-					A2(
-						$elm$core$Dict$get,
-						_Utils_Tuple2(person1, course1),
-						inputData.preferences));
-				var rank1New = A2(
-					$elm$core$Maybe$map,
-					function ($) {
-						return $.rank;
-					},
-					A2(
-						$elm$core$Dict$get,
-						_Utils_Tuple2(person1, course2),
-						inputData.preferences));
-				var oldRankings = _List_fromArray(
-					[rank1Old, rank2Old]);
-				var newRankings = _List_fromArray(
-					[rank1New, rank2New]);
-				return _Utils_eq(
-					A2($author$project$Matching$compareLeximin, newRankings, oldRankings),
-					$elm$core$Basics$GT) ? $elm$core$Maybe$Just(
-					A3(
-						$elm$core$Dict$insert,
-						person2,
-						course1,
-						A3($elm$core$Dict$insert, person1, course2, assignment))) : $elm$core$Maybe$Nothing;
-			}
+var $elm$core$List$append = F2(
+	function (xs, ys) {
+		if (!ys.b) {
+			return xs;
+		} else {
+			return A3($elm$core$List$foldr, $elm$core$List$cons, ys, xs);
+		}
+	});
+var $elm$core$List$concat = function (lists) {
+	return A3($elm$core$List$foldr, $elm$core$List$append, _List_Nil, lists);
+};
+var $elm$core$List$maybeCons = F3(
+	function (f, mx, xs) {
+		var _v0 = f(mx);
+		if (_v0.$ === 'Just') {
+			var x = _v0.a;
+			return A2($elm$core$List$cons, x, xs);
+		} else {
+			return xs;
+		}
+	});
+var $elm$core$List$filterMap = F2(
+	function (f, xs) {
+		return A3(
+			$elm$core$List$foldr,
+			$elm$core$List$maybeCons(f),
+			_List_Nil,
+			xs);
+	});
+var $author$project$Dist$join = F2(
+	function (dist1, dist2) {
+		return A3($elm$core$Dict$foldl, $author$project$Dist$add, dist1, dist2);
+	});
+var $elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return $elm$core$Maybe$Just(
+				f(value));
 		} else {
 			return $elm$core$Maybe$Nothing;
 		}
 	});
-var $author$project$Matching$tryToImprove = F2(
-	function (inputData, assignment) {
-		var unfixedPeople = A2(
-			$elm$core$List$filter,
-			function (person) {
-				var _v1 = A2($elm$core$Dict$get, person, assignment);
-				if (_v1.$ === 'Just') {
-					var course = _v1.a;
-					return !A2(
-						$elm$core$Maybe$withDefault,
-						false,
-						A2(
-							$elm$core$Maybe$map,
-							function ($) {
-								return $.fixed;
-							},
-							A2(
-								$elm$core$Dict$get,
-								_Utils_Tuple2(person, course),
-								inputData.preferences)));
-				} else {
-					return false;
-				}
-			},
-			$elm$core$Dict$keys(assignment));
-		var allPairs = A2(
-			$elm$core$List$concatMap,
-			function (person1) {
-				return A2(
-					$elm$core$List$filterMap,
-					function (person2) {
-						return (_Utils_cmp(person1, person2) < 0) ? $elm$core$Maybe$Just(
-							_Utils_Tuple2(person1, person2)) : $elm$core$Maybe$Nothing;
-					},
-					unfixedPeople);
-			},
-			unfixedPeople);
-		return A2(
-			$author$project$MyList$findMap,
-			function (_v0) {
-				var p1 = _v0.a;
-				var p2 = _v0.b;
-				return A4($author$project$Matching$trySwap, inputData, assignment, p1, p2);
-			},
-			allPairs);
-	});
-var $author$project$Matching$improve = F2(
-	function (inputData, assignment) {
-		improve:
-		while (true) {
-			var _v0 = A2($author$project$Matching$tryToImprove, inputData, assignment);
-			if (_v0.$ === 'Just') {
-				var betterAssignment = _v0.a;
-				var $temp$inputData = inputData,
-					$temp$assignment = betterAssignment;
-				inputData = $temp$inputData;
-				assignment = $temp$assignment;
-				continue improve;
-			} else {
-				return assignment;
-			}
+var $author$project$Util$Order$maxWith = F3(
+	function (keyFunc, a, b) {
+		var _v0 = A2(keyFunc, a, b);
+		switch (_v0.$) {
+			case 'GT':
+				return a;
+			case 'EQ':
+				return a;
+			default:
+				return b;
 		}
 	});
-var $author$project$Matching$assignFixedConstraints = F2(
-	function (inputData, slots) {
-		return A3(
-			$elm$core$List$foldl,
-			F2(
-				function (_v1, _v3) {
-					var _v2 = _v1.a;
-					var person = _v2.a;
-					var course = _v2.b;
-					var assignment = _v3.a;
-					var remainingSlots = _v3.b;
-					var currentSlots = A2(
-						$elm$core$Maybe$withDefault,
-						0,
-						A2($elm$core$Dict$get, course, remainingSlots));
-					return (currentSlots > 0) ? _Utils_Tuple2(
-						A3($elm$core$Dict$insert, person, course, assignment),
-						A3($elm$core$Dict$insert, course, currentSlots - 1, remainingSlots)) : _Utils_Tuple2(assignment, remainingSlots);
-				}),
-			_Utils_Tuple2($elm$core$Dict$empty, slots),
-			A2(
-				$elm$core$List$filter,
-				function (_v0) {
-					var pref = _v0.b;
-					return pref.fixed;
-				},
-				$elm$core$Dict$toList(inputData.preferences)));
-	});
-var $elm$core$List$head = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return $elm$core$Maybe$Just(x);
-	} else {
-		return $elm$core$Maybe$Nothing;
-	}
-};
-var $author$project$Matching$findCourseWithRank = F4(
-	function (inputData, person, targetRank, slots) {
-		return $elm$core$List$head(
-			A2(
-				$elm$core$List$filterMap,
-				function (_v0) {
-					var _v1 = _v0.a;
-					var p = _v1.a;
-					var course = _v1.b;
-					var pref = _v0.b;
-					if (_Utils_eq(p, person) && _Utils_eq(pref.rank, targetRank)) {
-						var availableSlots = A2(
-							$elm$core$Maybe$withDefault,
-							0,
-							A2($elm$core$Dict$get, course, slots));
-						return (availableSlots > 0) ? $elm$core$Maybe$Just(course) : $elm$core$Maybe$Nothing;
-					} else {
-						return $elm$core$Maybe$Nothing;
-					}
-				},
-				$elm$core$Dict$toList(inputData.preferences)));
-	});
-var $elm$core$Dict$member = F2(
-	function (key, dict) {
-		var _v0 = A2($elm$core$Dict$get, key, dict);
-		if (_v0.$ === 'Just') {
-			return true;
+var $author$project$Util$MyMaybe$compare = F2(
+	function (maybeA, maybeB) {
+		var _v0 = _Utils_Tuple2(maybeA, maybeB);
+		if (_v0.a.$ === 'Nothing') {
+			if (_v0.b.$ === 'Nothing') {
+				var _v1 = _v0.a;
+				var _v2 = _v0.b;
+				return $elm$core$Basics$EQ;
+			} else {
+				var _v4 = _v0.a;
+				return $elm$core$Basics$LT;
+			}
 		} else {
-			return false;
+			if (_v0.b.$ === 'Nothing') {
+				var _v3 = _v0.b;
+				return $elm$core$Basics$GT;
+			} else {
+				var a = _v0.a.a;
+				var b = _v0.b.a;
+				return A2($elm$core$Basics$compare, a, b);
+			}
 		}
 	});
-var $author$project$Matching$assignRound = F5(
-	function (inputData, targetRank, unassignedPeople, currentAssignment, currentSlots) {
-		return A3(
-			$elm$core$List$foldl,
-			F2(
-				function (person, _v0) {
-					var assignment = _v0.a;
-					var slots = _v0.b;
-					if (A2($elm$core$Dict$member, person, assignment)) {
-						return _Utils_Tuple2(assignment, slots);
+var $author$project$Util$MyList$maximumBy = F2(
+	function (keyFunc, list) {
+		var helper = F3(
+			function (currentKey, currentVal, xs) {
+				helper:
+				while (true) {
+					if (!xs.b) {
+						return currentVal;
 					} else {
-						var _v1 = A4($author$project$Matching$findCourseWithRank, inputData, person, targetRank, slots);
-						if (_v1.$ === 'Just') {
-							var course = _v1.a;
-							var remainingSlots = A2(
-								$elm$core$Maybe$withDefault,
-								0,
-								A2($elm$core$Dict$get, course, slots));
-							return _Utils_Tuple2(
-								A3($elm$core$Dict$insert, person, course, assignment),
-								A3($elm$core$Dict$insert, course, remainingSlots - 1, slots));
+						var y = xs.a;
+						var ys = xs.b;
+						var key = keyFunc(y);
+						if (_Utils_eq(
+							A2(
+								$author$project$Util$MyMaybe$compare,
+								$elm$core$Maybe$Just(key),
+								currentKey),
+							$elm$core$Basics$GT)) {
+							var $temp$currentKey = $elm$core$Maybe$Just(key),
+								$temp$currentVal = $elm$core$Maybe$Just(y),
+								$temp$xs = ys;
+							currentKey = $temp$currentKey;
+							currentVal = $temp$currentVal;
+							xs = $temp$xs;
+							continue helper;
 						} else {
-							return _Utils_Tuple2(assignment, slots);
+							var $temp$currentKey = currentKey,
+								$temp$currentVal = currentVal,
+								$temp$xs = ys;
+							currentKey = $temp$currentKey;
+							currentVal = $temp$currentVal;
+							xs = $temp$xs;
+							continue helper;
 						}
 					}
-				}),
-			_Utils_Tuple2(currentAssignment, currentSlots),
-			unassignedPeople);
-	});
-var $elm$core$List$maximum = function (list) {
-	if (list.b) {
-		var x = list.a;
-		var xs = list.b;
-		return $elm$core$Maybe$Just(
-			A3($elm$core$List$foldl, $elm$core$Basics$max, x, xs));
-	} else {
-		return $elm$core$Maybe$Nothing;
-	}
-};
-var $elm$core$Dict$values = function (dict) {
-	return A3(
-		$elm$core$Dict$foldr,
-		F3(
-			function (key, value, valueList) {
-				return A2($elm$core$List$cons, value, valueList);
-			}),
-		_List_Nil,
-		dict);
-};
-var $author$project$Matching$getMaxRank = function (inputData) {
-	return A2(
-		$elm$core$Maybe$withDefault,
-		1,
-		$elm$core$List$maximum(
-			A2(
-				$elm$core$List$map,
-				function ($) {
-					return $.rank;
-				},
-				$elm$core$Dict$values(inputData.preferences))));
-};
-var $elm$core$List$any = F2(
-	function (isOkay, list) {
-		any:
-		while (true) {
-			if (!list.b) {
-				return false;
-			} else {
-				var x = list.a;
-				var xs = list.b;
-				if (isOkay(x)) {
-					return true;
-				} else {
-					var $temp$isOkay = isOkay,
-						$temp$list = xs;
-					isOkay = $temp$isOkay;
-					list = $temp$list;
-					continue any;
-				}
-			}
-		}
-	});
-var $elm$core$List$member = F2(
-	function (x, xs) {
-		return A2(
-			$elm$core$List$any,
-			function (a) {
-				return _Utils_eq(a, x);
-			},
-			xs);
-	});
-var $author$project$Matching$greedyAssignment = F2(
-	function (inputData, shuffledPeople) {
-		var maxRank = $author$project$Matching$getMaxRank(inputData);
-		var initialSlots = inputData.courses;
-		var _v0 = A2($author$project$Matching$assignFixedConstraints, inputData, initialSlots);
-		var fixedAssignments = _v0.a;
-		var slotsAfterFixed = _v0.b;
-		var fixedPeople = $elm$core$Dict$keys(fixedAssignments);
-		var unassignedPeople = A2(
-			$elm$core$List$filter,
-			function (p) {
-				return !A2($elm$core$List$member, p, fixedPeople);
-			},
-			shuffledPeople);
-		var finalAssignment = A3(
-			$elm$core$List$foldl,
-			F2(
-				function (rank, _v1) {
-					var assignment = _v1.a;
-					var slots = _v1.b;
-					return A5($author$project$Matching$assignRound, inputData, rank, unassignedPeople, assignment, slots);
-				}),
-			_Utils_Tuple2(fixedAssignments, slotsAfterFixed),
-			A2($elm$core$List$range, 1, maxRank)).a;
-		return finalAssignment;
-	});
-var $author$project$Matching$getAllPeople = function (inputData) {
-	return $elm$core$Dict$keys(
-		A3(
-			$elm$core$List$foldl,
-			F2(
-				function (person, set) {
-					return A3($elm$core$Dict$insert, person, _Utils_Tuple0, set);
-				}),
-			$elm$core$Dict$empty,
-			A2(
-				$elm$core$List$map,
-				$elm$core$Tuple$first,
-				$elm$core$Dict$keys(inputData.preferences))));
-};
-var $elm$core$Array$fromListHelp = F3(
-	function (list, nodeList, nodeListSize) {
-		fromListHelp:
-		while (true) {
-			var _v0 = A2($elm$core$Elm$JsArray$initializeFromList, $elm$core$Array$branchFactor, list);
-			var jsArray = _v0.a;
-			var remainingItems = _v0.b;
-			if (_Utils_cmp(
-				$elm$core$Elm$JsArray$length(jsArray),
-				$elm$core$Array$branchFactor) < 0) {
-				return A2(
-					$elm$core$Array$builderToArray,
-					true,
-					{nodeList: nodeList, nodeListSize: nodeListSize, tail: jsArray});
-			} else {
-				var $temp$list = remainingItems,
-					$temp$nodeList = A2(
-					$elm$core$List$cons,
-					$elm$core$Array$Leaf(jsArray),
-					nodeList),
-					$temp$nodeListSize = nodeListSize + 1;
-				list = $temp$list;
-				nodeList = $temp$nodeList;
-				nodeListSize = $temp$nodeListSize;
-				continue fromListHelp;
-			}
-		}
-	});
-var $elm$core$Array$fromList = function (list) {
-	if (!list.b) {
-		return $elm$core$Array$empty;
-	} else {
-		return A3($elm$core$Array$fromListHelp, list, _List_Nil, 0);
-	}
-};
-var $elm$core$Array$length = function (_v0) {
-	var len = _v0.a;
-	return len;
-};
-var $elm$core$Bitwise$and = _Bitwise_and;
-var $elm$core$Basics$negate = function (n) {
-	return -n;
-};
-var $elm$core$Bitwise$xor = _Bitwise_xor;
-var $elm$random$Random$peel = function (_v0) {
-	var state = _v0.a;
-	var word = (state ^ (state >>> ((state >>> 28) + 4))) * 277803737;
-	return ((word >>> 22) ^ word) >>> 0;
-};
-var $elm$random$Random$int = F2(
-	function (a, b) {
-		return $elm$random$Random$Generator(
-			function (seed0) {
-				var _v0 = (_Utils_cmp(a, b) < 0) ? _Utils_Tuple2(a, b) : _Utils_Tuple2(b, a);
-				var lo = _v0.a;
-				var hi = _v0.b;
-				var range = (hi - lo) + 1;
-				if (!((range - 1) & range)) {
-					return _Utils_Tuple2(
-						(((range - 1) & $elm$random$Random$peel(seed0)) >>> 0) + lo,
-						$elm$random$Random$next(seed0));
-				} else {
-					var threshhold = (((-range) >>> 0) % range) >>> 0;
-					var accountForBias = function (seed) {
-						accountForBias:
-						while (true) {
-							var x = $elm$random$Random$peel(seed);
-							var seedN = $elm$random$Random$next(seed);
-							if (_Utils_cmp(x, threshhold) < 0) {
-								var $temp$seed = seedN;
-								seed = $temp$seed;
-								continue accountForBias;
-							} else {
-								return _Utils_Tuple2((x % range) + lo, seedN);
-							}
-						}
-					};
-					return accountForBias(seed0);
 				}
 			});
+		return A3(helper, $elm$core$Maybe$Nothing, $elm$core$Maybe$Nothing, list);
 	});
-var $elm$core$Array$bitMask = 4294967295 >>> (32 - $elm$core$Array$shiftStep);
-var $elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
-var $elm$core$Array$getHelp = F3(
-	function (shift, index, tree) {
-		getHelp:
+var $author$project$Util$Order$minWith = F3(
+	function (keyFunc, a, b) {
+		var _v0 = A2(keyFunc, a, b);
+		switch (_v0.$) {
+			case 'LT':
+				return a;
+			case 'EQ':
+				return a;
+			default:
+				return b;
+		}
+	});
+var $author$project$Util$MyMaybe$min = $author$project$Util$Order$minWith($author$project$Util$MyMaybe$compare);
+var $elm$core$List$sortBy = _List_sortBy;
+var $elm$core$List$takeReverse = F3(
+	function (n, list, kept) {
+		takeReverse:
 		while (true) {
-			var pos = $elm$core$Array$bitMask & (index >>> shift);
-			var _v0 = A2($elm$core$Elm$JsArray$unsafeGet, pos, tree);
-			if (_v0.$ === 'SubTree') {
-				var subTree = _v0.a;
-				var $temp$shift = shift - $elm$core$Array$shiftStep,
-					$temp$index = index,
-					$temp$tree = subTree;
-				shift = $temp$shift;
-				index = $temp$index;
-				tree = $temp$tree;
-				continue getHelp;
+			if (n <= 0) {
+				return kept;
 			} else {
-				var values = _v0.a;
-				return A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, values);
+				if (!list.b) {
+					return kept;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs,
+						$temp$kept = A2($elm$core$List$cons, x, kept);
+					n = $temp$n;
+					list = $temp$list;
+					kept = $temp$kept;
+					continue takeReverse;
+				}
 			}
 		}
 	});
-var $elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
-var $elm$core$Array$tailIndex = function (len) {
-	return (len >>> 5) << 5;
-};
-var $elm$core$Array$get = F2(
-	function (index, _v0) {
-		var len = _v0.a;
-		var startShift = _v0.b;
-		var tree = _v0.c;
-		var tail = _v0.d;
-		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? $elm$core$Maybe$Nothing : ((_Utils_cmp(
-			index,
-			$elm$core$Array$tailIndex(len)) > -1) ? $elm$core$Maybe$Just(
-			A2($elm$core$Elm$JsArray$unsafeGet, $elm$core$Array$bitMask & index, tail)) : $elm$core$Maybe$Just(
-			A3($elm$core$Array$getHelp, startShift, index, tree)));
+var $elm$core$List$takeTailRec = F2(
+	function (n, list) {
+		return $elm$core$List$reverse(
+			A3($elm$core$List$takeReverse, n, list, _List_Nil));
 	});
-var $elm$core$Elm$JsArray$unsafeSet = _JsArray_unsafeSet;
-var $elm$core$Array$setHelp = F4(
-	function (shift, index, value, tree) {
-		var pos = $elm$core$Array$bitMask & (index >>> shift);
-		var _v0 = A2($elm$core$Elm$JsArray$unsafeGet, pos, tree);
-		if (_v0.$ === 'SubTree') {
-			var subTree = _v0.a;
-			var newSub = A4($elm$core$Array$setHelp, shift - $elm$core$Array$shiftStep, index, value, subTree);
-			return A3(
-				$elm$core$Elm$JsArray$unsafeSet,
-				pos,
-				$elm$core$Array$SubTree(newSub),
-				tree);
+var $elm$core$List$takeFast = F3(
+	function (ctr, n, list) {
+		if (n <= 0) {
+			return _List_Nil;
 		} else {
-			var values = _v0.a;
-			var newLeaf = A3($elm$core$Elm$JsArray$unsafeSet, $elm$core$Array$bitMask & index, value, values);
-			return A3(
-				$elm$core$Elm$JsArray$unsafeSet,
-				pos,
-				$elm$core$Array$Leaf(newLeaf),
-				tree);
-		}
-	});
-var $elm$core$Array$set = F3(
-	function (index, value, array) {
-		var len = array.a;
-		var startShift = array.b;
-		var tree = array.c;
-		var tail = array.d;
-		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? array : ((_Utils_cmp(
-			index,
-			$elm$core$Array$tailIndex(len)) > -1) ? A4(
-			$elm$core$Array$Array_elm_builtin,
-			len,
-			startShift,
-			tree,
-			A3($elm$core$Elm$JsArray$unsafeSet, $elm$core$Array$bitMask & index, value, tail)) : A4(
-			$elm$core$Array$Array_elm_builtin,
-			len,
-			startShift,
-			A4($elm$core$Array$setHelp, startShift, index, value, tree),
-			tail));
-	});
-var $author$project$Shuffle$swapArrayElements = F3(
-	function (i, j, array) {
-		var maybeJ = A2($elm$core$Array$get, j, array);
-		var maybeI = A2($elm$core$Array$get, i, array);
-		var _v0 = _Utils_Tuple2(maybeI, maybeJ);
-		if ((_v0.a.$ === 'Just') && (_v0.b.$ === 'Just')) {
-			var valI = _v0.a.a;
-			var valJ = _v0.b.a;
-			return A3(
-				$elm$core$Array$set,
-				j,
-				valI,
-				A3($elm$core$Array$set, i, valJ, array));
-		} else {
-			return array;
-		}
-	});
-var $author$project$Shuffle$shuffleArray = F3(
-	function (array, currentIndex, length) {
-		return (_Utils_cmp(currentIndex, length - 1) > -1) ? $elm$random$Random$constant(array) : A2(
-			$elm$random$Random$andThen,
-			function (randomIndex) {
-				var swapped = A3($author$project$Shuffle$swapArrayElements, currentIndex, randomIndex, array);
-				return A3($author$project$Shuffle$shuffleArray, swapped, currentIndex + 1, length);
-			},
-			A2($elm$random$Random$int, currentIndex, length - 1));
-	});
-var $author$project$Shuffle$shuffle = function (list) {
-	var array = $elm$core$Array$fromList(list);
-	var n = $elm$core$Array$length(array);
-	return A2(
-		$elm$random$Random$map,
-		$elm$core$Array$toList,
-		A3($author$project$Shuffle$shuffleArray, array, 0, n));
-};
-var $author$project$Matching$shufflePeople = function (inputData) {
-	var people = $author$project$Matching$getAllPeople(inputData);
-	return $author$project$Shuffle$shuffle(people);
-};
-var $author$project$Matching$init = function (inputData) {
-	return A2(
-		$elm$random$Random$map,
-		$author$project$Matching$greedyAssignment(inputData),
-		$author$project$Matching$shufflePeople(inputData));
-};
-var $author$project$Matching$findAssignment = function (inputData) {
-	return A2(
-		$elm$random$Random$map,
-		$author$project$Matching$improve(inputData),
-		$author$project$Matching$init(inputData));
-};
-var $author$project$Matching$solve = function (inputData) {
-	var runMultiplePasses = F3(
-		function (remainingRuns, bestAssignment, bestDist) {
-			return (remainingRuns <= 0) ? $elm$random$Random$constant(
-				_Utils_Tuple2(bestAssignment, bestDist)) : A2(
-				$elm$random$Random$andThen,
-				function (newAssignment) {
-					var newDist = $author$project$Matching$preferenceDistribution(
-						A2($author$project$Matching$ranks, inputData, newAssignment));
-					var comparison = A2($author$project$Matching$compareDist, newDist, bestDist);
-					if (comparison.$ === 'GT') {
-						return A3(runMultiplePasses, remainingRuns - 1, newAssignment, newDist);
+			var _v0 = _Utils_Tuple2(n, list);
+			_v0$1:
+			while (true) {
+				_v0$5:
+				while (true) {
+					if (!_v0.b.b) {
+						return list;
 					} else {
-						return A3(runMultiplePasses, remainingRuns - 1, bestAssignment, bestDist);
+						if (_v0.b.b.b) {
+							switch (_v0.a) {
+								case 1:
+									break _v0$1;
+								case 2:
+									var _v2 = _v0.b;
+									var x = _v2.a;
+									var _v3 = _v2.b;
+									var y = _v3.a;
+									return _List_fromArray(
+										[x, y]);
+								case 3:
+									if (_v0.b.b.b.b) {
+										var _v4 = _v0.b;
+										var x = _v4.a;
+										var _v5 = _v4.b;
+										var y = _v5.a;
+										var _v6 = _v5.b;
+										var z = _v6.a;
+										return _List_fromArray(
+											[x, y, z]);
+									} else {
+										break _v0$5;
+									}
+								default:
+									if (_v0.b.b.b.b && _v0.b.b.b.b.b) {
+										var _v7 = _v0.b;
+										var x = _v7.a;
+										var _v8 = _v7.b;
+										var y = _v8.a;
+										var _v9 = _v8.b;
+										var z = _v9.a;
+										var _v10 = _v9.b;
+										var w = _v10.a;
+										var tl = _v10.b;
+										return (ctr > 1000) ? A2(
+											$elm$core$List$cons,
+											x,
+											A2(
+												$elm$core$List$cons,
+												y,
+												A2(
+													$elm$core$List$cons,
+													z,
+													A2(
+														$elm$core$List$cons,
+														w,
+														A2($elm$core$List$takeTailRec, n - 4, tl))))) : A2(
+											$elm$core$List$cons,
+											x,
+											A2(
+												$elm$core$List$cons,
+												y,
+												A2(
+													$elm$core$List$cons,
+													z,
+													A2(
+														$elm$core$List$cons,
+														w,
+														A3($elm$core$List$takeFast, ctr + 1, n - 4, tl)))));
+									} else {
+										break _v0$5;
+									}
+							}
+						} else {
+							if (_v0.a === 1) {
+								break _v0$1;
+							} else {
+								break _v0$5;
+							}
+						}
 					}
-				},
-				$author$project$Matching$findAssignment(inputData));
-		});
-	return A2(
-		$elm$random$Random$andThen,
-		function (initialAssignment) {
-			var initialDist = $author$project$Matching$preferenceDistribution(
-				A2($author$project$Matching$ranks, inputData, initialAssignment));
-			return A2(
-				$elm$random$Random$map,
-				function (_v1) {
-					var finalAssignment = _v1.a;
-					return A2($author$project$Matching$assignmentToResults, inputData, finalAssignment);
-				},
-				A3(runMultiplePasses, 999, initialAssignment, initialDist));
+				}
+				return list;
+			}
+			var _v1 = _v0.b;
+			var x = _v1.a;
+			return _List_fromArray(
+				[x]);
+		}
+	});
+var $elm$core$List$take = F2(
+	function (n, list) {
+		return A3($elm$core$List$takeFast, 0, n, list);
+	});
+var $author$project$Solver$select = function (space) {
+	var personwiseDist = $author$project$Dist$count(
+		$elm$core$Dict$values(
+			A3(
+				$elm$core$Dict$foldl,
+				F3(
+					function (_v5, rank, acc) {
+						var person = _v5.a;
+						return A3(
+							$elm$core$Dict$update,
+							person,
+							$author$project$Util$MyMaybe$min(
+								$elm$core$Maybe$Just(rank)),
+							acc);
+					}),
+				$author$project$Dist$empty,
+				space.preferences)));
+	var bestForEachCourse = A3(
+		$elm$core$Dict$foldl,
+		F3(
+			function (_v4, rank, acc) {
+				var person = _v4.a;
+				var course = _v4.b;
+				return A3(
+					$elm$core$Dict$update,
+					course,
+					A2(
+						$elm$core$Basics$composeR,
+						$elm$core$Maybe$withDefault(_List_Nil),
+						A2(
+							$elm$core$Basics$composeR,
+							$elm$core$List$cons(
+								_Utils_Tuple2(person, rank)),
+							A2(
+								$elm$core$Basics$composeR,
+								$elm$core$List$sortBy($elm$core$Tuple$second),
+								A2(
+									$elm$core$Basics$composeR,
+									$elm$core$List$take(
+										A2($author$project$Dist$get, course, space.slots)),
+									$elm$core$Maybe$Just)))),
+					acc);
+			}),
+		$elm$core$Dict$empty,
+		space.preferences);
+	var filledEverySlot = A2(
+		$elm$core$List$all,
+		function (_v3) {
+			var course = _v3.a;
+			var slotsNeeded = _v3.b;
+			var candidates = A2(
+				$elm$core$Maybe$withDefault,
+				_List_Nil,
+				A2($elm$core$Dict$get, course, bestForEachCourse));
+			return _Utils_eq(
+				$elm$core$List$length(candidates),
+				slotsNeeded);
 		},
-		$author$project$Matching$findAssignment(inputData));
+		$elm$core$Dict$toList(space.slots));
+	var dist = filledEverySlot ? $elm$core$Maybe$Just(
+		A2(
+			$author$project$Dist$join,
+			$author$project$Matching$assignmentToDist(space.assignment),
+			A3(
+				$author$project$Util$Order$maxWith,
+				$author$project$Matching$compareLex,
+				personwiseDist,
+				$author$project$Dist$count(
+					A2(
+						$elm$core$List$map,
+						$elm$core$Tuple$second,
+						$elm$core$List$concat(
+							$elm$core$Dict$values(bestForEachCourse))))))) : $elm$core$Maybe$Nothing;
+	var worstCourseWithBestPerson = A2(
+		$author$project$Util$MyList$maximumBy,
+		function (_v2) {
+			var rank = _v2.c;
+			return rank;
+		},
+		A2(
+			$elm$core$List$filterMap,
+			function (_v0) {
+				var course = _v0.a;
+				var options = _v0.b;
+				return A2(
+					$elm$core$Maybe$map,
+					function (_v1) {
+						var person = _v1.a;
+						var rank = _v1.b;
+						return _Utils_Tuple3(person, course, rank);
+					},
+					$elm$core$List$head(options));
+			},
+			$elm$core$Dict$toList(bestForEachCourse)));
+	return A2(
+		$elm$core$Maybe$map,
+		function (selection) {
+			return _Utils_Tuple2(selection, dist);
+		},
+		worstCourseWithBestPerson);
 };
-var $elm$file$File$toString = _File_toString;
-var $elm$core$Dict$filter = F2(
-	function (isGood, dict) {
-		return A3(
-			$elm$core$Dict$foldl,
-			F3(
-				function (k, v, d) {
-					return A2(isGood, k, v) ? A3($elm$core$Dict$insert, k, v, d) : d;
-				}),
-			$elm$core$Dict$empty,
-			dict);
+var $author$project$Solver$stepState = function (_v0) {
+	var state = _v0.a;
+	var _v1 = state.position;
+	if (_v1.$ === 'Finish') {
+		return $elm$core$Maybe$Nothing;
+	} else {
+		var space = _v1.a;
+		var next = _v1.b;
+		var _v2 = $author$project$Solver$select(space);
+		if (_v2.$ === 'Nothing') {
+			var allSlotsFilled = A2(
+				$elm$core$List$all,
+				$elm$core$Basics$eq(0),
+				$elm$core$Dict$values(space.slots));
+			return allSlotsFilled ? $elm$core$Maybe$Just(
+				$author$project$Solver$SearchState(
+					_Utils_update(
+						state,
+						{
+							position: next,
+							resultsSoFar: A2(
+								$author$project$Matching$joinResults,
+								$author$project$Solver$assignmentToResult(space.assignment),
+								state.resultsSoFar)
+						}))) : $elm$core$Maybe$Just(
+				$author$project$Solver$SearchState(
+					_Utils_update(
+						state,
+						{position: next})));
+		} else {
+			var _v3 = _v2.a;
+			var _v4 = _v3.a;
+			var person = _v4.a;
+			var course = _v4.b;
+			var rank = _v4.c;
+			var dist = _v3.b;
+			if (A2($author$project$Solver$prune, state.resultsSoFar, dist)) {
+				return $elm$core$Maybe$Just(
+					$author$project$Solver$SearchState(
+						_Utils_update(
+							state,
+							{position: next})));
+			} else {
+				var nextPref = A2(
+					$elm$core$Dict$remove,
+					_Utils_Tuple2(person, course),
+					space.preferences);
+				var nextStep = A2(
+					$author$project$Solver$Step,
+					_Utils_update(
+						space,
+						{preferences: nextPref}),
+					next);
+				var newSpace = A4($author$project$Solver$assign, person, course, rank, space);
+				return $elm$core$Maybe$Just(
+					$author$project$Solver$SearchState(
+						_Utils_update(
+							state,
+							{
+								position: A2($author$project$Solver$Step, newSpace, nextStep)
+							})));
+			}
+		}
+	}
+};
+var $author$project$Main$advanceMany = F2(
+	function (n, initialState) {
+		advanceMany:
+		while (true) {
+			if (n <= 0) {
+				return initialState;
+			} else {
+				var _v0 = $author$project$Solver$stepState(initialState);
+				if (_v0.$ === 'Just') {
+					var newState = _v0.a;
+					var $temp$n = n - 1,
+						$temp$initialState = newState;
+					n = $temp$n;
+					initialState = $temp$initialState;
+					continue advanceMany;
+				} else {
+					return initialState;
+				}
+			}
+		}
+	});
+var $elm$json$Json$Encode$string = _Json_wrap;
+var $author$project$Main$copyToClipboard = _Platform_outgoingPort('copyToClipboard', $elm$json$Json$Encode$string);
+var $elm$core$List$drop = F2(
+	function (n, list) {
+		drop:
+		while (true) {
+			if (n <= 0) {
+				return list;
+			} else {
+				if (!list.b) {
+					return list;
+				} else {
+					var x = list.a;
+					var xs = list.b;
+					var $temp$n = n - 1,
+						$temp$list = xs;
+					n = $temp$n;
+					list = $temp$list;
+					continue drop;
+				}
+			}
+		}
+	});
+var $elm$file$File$Select$file = F2(
+	function (mimes, toMsg) {
+		return A2(
+			$elm$core$Task$perform,
+			toMsg,
+			_File_uploadOne(mimes));
+	});
+var $author$project$Main$formatAssignmentForCopy = function (assignment) {
+	var rows = A2(
+		$elm$core$List$map,
+		function (_v0) {
+			var person = _v0.a;
+			var _v1 = _v0.b;
+			var course = _v1.a;
+			var rank = _v1.b;
+			return person + (',' + (course + (',' + $elm$core$String$fromInt(rank))));
+		},
+		$elm$core$Dict$toList(assignment));
+	var header = 'Person,Course,Preference Rank';
+	return A2(
+		$elm$core$String$join,
+		'\n',
+		A2($elm$core$List$cons, header, rows));
+};
+var $elm$core$Basics$ge = _Utils_ge;
+var $elm$core$Basics$modBy = _Basics_modBy;
+var $author$project$Main$ordinal = function (n) {
+	var suffix = function () {
+		if ((A2($elm$core$Basics$modBy, 100, n) >= 11) && (A2($elm$core$Basics$modBy, 100, n) <= 13)) {
+			return 'th';
+		} else {
+			var _v0 = A2($elm$core$Basics$modBy, 10, n);
+			switch (_v0) {
+				case 1:
+					return 'st';
+				case 2:
+					return 'nd';
+				case 3:
+					return 'rd';
+				default:
+					return 'th';
+			}
+		}
+	}();
+	return _Utils_ap(
+		$elm$core$String$fromInt(n),
+		suffix);
+};
+var $author$project$Main$pluralize = F3(
+	function (n, singular, plural) {
+		return (n === 1) ? singular : plural;
+	});
+var $author$project$Main$formatDistributionForCopy = function (dist) {
+	var formatDistRow = function (_v0) {
+		var rank = _v0.a;
+		var count = _v0.b;
+		return $author$project$Main$ordinal(rank) + (' choice: ' + ($elm$core$String$fromInt(count) + (' ' + A3($author$project$Main$pluralize, count, 'person', 'people'))));
+	};
+	return A2(
+		$elm$core$String$join,
+		'\n',
+		A2(
+			$elm$core$List$map,
+			formatDistRow,
+			A2(
+				$elm$core$List$sortBy,
+				$elm$core$Tuple$first,
+				$elm$core$Dict$toList(dist))));
+};
+var $author$project$Solver$Finish = {$: 'Finish'};
+var $author$project$Solver$fixPref = F3(
+	function (_v0, _v1, space) {
+		var person = _v0.a;
+		var course = _v0.b;
+		var rank = _v1.rank;
+		var fixed = _v1.fixed;
+		return fixed ? A4($author$project$Solver$assign, person, course, rank, space) : space;
 	});
 var $elm$core$Dict$map = F2(
 	function (func, dict) {
@@ -7377,6 +6959,252 @@ var $elm$core$Dict$map = F2(
 				A2($elm$core$Dict$map, func, right));
 		}
 	});
+var $author$project$Solver$initSpace = function (_v0) {
+	var preferences = _v0.preferences;
+	var courses = _v0.courses;
+	var space = {
+		assignment: $elm$core$Dict$empty,
+		preferences: A2(
+			$elm$core$Dict$map,
+			F2(
+				function (_v1, _v2) {
+					var rank = _v2.rank;
+					return rank;
+				}),
+			preferences),
+		slots: courses
+	};
+	return A3($elm$core$Dict$foldl, $author$project$Solver$fixPref, space, preferences);
+};
+var $author$project$Matching$noResults = $elm$core$Maybe$Nothing;
+var $author$project$Solver$initState = function (inputData) {
+	return $author$project$Solver$SearchState(
+		{
+			position: A2(
+				$author$project$Solver$Step,
+				$author$project$Solver$initSpace(inputData),
+				$author$project$Solver$Finish),
+			resultsSoFar: $author$project$Matching$noResults
+		});
+};
+var $elm$core$String$lines = _String_lines;
+var $elm$core$Dict$fromList = function (assocs) {
+	return A3(
+		$elm$core$List$foldl,
+		F2(
+			function (_v0, dict) {
+				var key = _v0.a;
+				var value = _v0.b;
+				return A3($elm$core$Dict$insert, key, value, dict);
+			}),
+		$elm$core$Dict$empty,
+		assocs);
+};
+var $elm$core$List$isEmpty = function (xs) {
+	if (!xs.b) {
+		return true;
+	} else {
+		return false;
+	}
+};
+var $elm$core$Tuple$pair = F2(
+	function (a, b) {
+		return _Utils_Tuple2(a, b);
+	});
+var $author$project$CsvParser$splitCsv = function (line) {
+	return A2($elm$core$String$split, ',', line);
+};
+var $author$project$CsvParser$toCourseEntry = function (_v0) {
+	var name = _v0.a;
+	var maybeSlots = _v0.b;
+	return A2(
+		$elm$core$Maybe$map,
+		function (slots) {
+			return _Utils_Tuple2(name, slots);
+		},
+		maybeSlots);
+};
+var $elm$core$String$trim = _String_trim;
+var $author$project$CsvParser$parseCourses = F2(
+	function (courseRow, slotRow) {
+		var slotCounts = A2(
+			$elm$core$List$map,
+			A2($elm$core$Basics$composeR, $elm$core$String$trim, $elm$core$String$toInt),
+			A2(
+				$elm$core$List$drop,
+				1,
+				$author$project$CsvParser$splitCsv(slotRow)));
+		var courseNames = A2(
+			$elm$core$List$map,
+			$elm$core$String$trim,
+			A2(
+				$elm$core$List$drop,
+				1,
+				$author$project$CsvParser$splitCsv(courseRow)));
+		if (!_Utils_eq(
+			$elm$core$List$length(courseNames),
+			$elm$core$List$length(slotCounts))) {
+			return $elm$core$Result$Err('Number of courses doesn\'t match number of slot values');
+		} else {
+			var combined = A3($elm$core$List$map2, $elm$core$Tuple$pair, courseNames, slotCounts);
+			var invalidSlots = A2(
+				$elm$core$List$filter,
+				function (_v0) {
+					var slot = _v0.b;
+					return _Utils_eq(slot, $elm$core$Maybe$Nothing);
+				},
+				combined);
+			return (!$elm$core$List$isEmpty(invalidSlots)) ? $elm$core$Result$Err('Invalid slot count (must be a number)') : $elm$core$Result$Ok(
+				$elm$core$Dict$fromList(
+					A2($elm$core$List$filterMap, $author$project$CsvParser$toCourseEntry, combined)));
+		}
+	});
+var $author$project$CsvParser$combineResults = function (results) {
+	return A3(
+		$elm$core$List$foldr,
+		F2(
+			function (result, acc) {
+				var _v0 = _Utils_Tuple2(result, acc);
+				if (_v0.a.$ === 'Ok') {
+					if (_v0.b.$ === 'Ok') {
+						var value = _v0.a.a;
+						var values = _v0.b.a;
+						return $elm$core$Result$Ok(
+							A2($elm$core$List$cons, value, values));
+					} else {
+						var err = _v0.b.a;
+						return $elm$core$Result$Err(err);
+					}
+				} else {
+					var err = _v0.a.a;
+					return $elm$core$Result$Err(err);
+				}
+			}),
+		$elm$core$Result$Ok(_List_Nil),
+		results);
+};
+var $elm$core$Result$map = F2(
+	function (func, ra) {
+		if (ra.$ === 'Ok') {
+			var a = ra.a;
+			return $elm$core$Result$Ok(
+				func(a));
+		} else {
+			var e = ra.a;
+			return $elm$core$Result$Err(e);
+		}
+	});
+var $author$project$CsvParser$parsePreference = F3(
+	function (personName, courseName, prefString) {
+		var trimmed = $elm$core$String$trim(prefString);
+		var isNegative = A2($elm$core$String$startsWith, '-', trimmed);
+		var isFixed = A2($elm$core$String$startsWith, '*', trimmed);
+		var rankString = isFixed ? A2($elm$core$String$dropLeft, 1, trimmed) : (isNegative ? A2($elm$core$String$dropLeft, 1, trimmed) : trimmed);
+		if (isNegative) {
+			return $elm$core$Result$Ok($elm$core$Maybe$Nothing);
+		} else {
+			var _v0 = $elm$core$String$toInt(rankString);
+			if (_v0.$ === 'Just') {
+				var rank = _v0.a;
+				return $elm$core$Result$Ok(
+					$elm$core$Maybe$Just(
+						_Utils_Tuple2(
+							_Utils_Tuple2(personName, courseName),
+							{fixed: isFixed, rank: rank})));
+			} else {
+				return $elm$core$Result$Err('Invalid preference rank: ' + prefString);
+			}
+		}
+	});
+var $author$project$CsvParser$parsePersonPreferences = F2(
+	function (courseNames, row) {
+		var values = $author$project$CsvParser$splitCsv(row);
+		if (!values.b) {
+			return $elm$core$Result$Err('Empty row');
+		} else {
+			var name = values.a;
+			var preferenceStrings = values.b;
+			if (!_Utils_eq(
+				$elm$core$List$length(courseNames),
+				$elm$core$List$length(preferenceStrings))) {
+				return $elm$core$Result$Err('Number of preferences doesn\'t match number of courses');
+			} else {
+				var personName = $elm$core$String$trim(name);
+				return A2(
+					$elm$core$Result$map,
+					$elm$core$List$filterMap($elm$core$Basics$identity),
+					$author$project$CsvParser$combineResults(
+						A3(
+							$elm$core$List$map2,
+							$author$project$CsvParser$parsePreference(personName),
+							courseNames,
+							preferenceStrings)));
+			}
+		}
+	});
+var $author$project$CsvParser$parsePeoplePreferences = F2(
+	function (courseNames, peopleRows) {
+		return A2(
+			$elm$core$Result$map,
+			A2($elm$core$Basics$composeR, $elm$core$List$concat, $elm$core$Dict$fromList),
+			$author$project$CsvParser$combineResults(
+				A2(
+					$elm$core$List$map,
+					$author$project$CsvParser$parsePersonPreferences(courseNames),
+					peopleRows)));
+	});
+var $author$project$CsvParser$parseCsvRows = F3(
+	function (courseRow, slotRow, peopleRows) {
+		var coursesResult = A2($author$project$CsvParser$parseCourses, courseRow, slotRow);
+		var courseNames = A2(
+			$elm$core$List$map,
+			$elm$core$String$trim,
+			A2(
+				$elm$core$List$drop,
+				1,
+				$author$project$CsvParser$splitCsv(courseRow)));
+		var preferencesResult = A2($author$project$CsvParser$parsePeoplePreferences, courseNames, peopleRows);
+		var _v0 = _Utils_Tuple2(coursesResult, preferencesResult);
+		if (_v0.a.$ === 'Ok') {
+			if (_v0.b.$ === 'Ok') {
+				var courses = _v0.a.a;
+				var preferences = _v0.b.a;
+				return $elm$core$Result$Ok(
+					{courses: courses, preferences: preferences});
+			} else {
+				var err = _v0.b.a;
+				return $elm$core$Result$Err(err);
+			}
+		} else {
+			var err = _v0.a.a;
+			return $elm$core$Result$Err(err);
+		}
+	});
+var $author$project$CsvParser$parse = function (csvContent) {
+	var lines = A2(
+		$elm$core$List$filter,
+		A2($elm$core$Basics$composeL, $elm$core$Basics$not, $elm$core$String$isEmpty),
+		A2(
+			$elm$core$List$map,
+			$elm$core$String$trim,
+			$elm$core$String$lines(csvContent)));
+	if (lines.b && lines.b.b) {
+		var courseRow = lines.a;
+		var _v1 = lines.b;
+		var slotRow = _v1.a;
+		var peopleRows = _v1.b;
+		return A3($author$project$CsvParser$parseCsvRows, courseRow, slotRow, peopleRows);
+	} else {
+		return $elm$core$Result$Err('CSV must have at least 2 rows (courses and slots)');
+	}
+};
+var $author$project$Solver$result = function (_v0) {
+	var resultsSoFar = _v0.a.resultsSoFar;
+	return resultsSoFar;
+};
+var $elm$core$Process$sleep = _Process_sleep;
+var $author$project$Main$stepsPerFrame = 1000;
+var $elm$file$File$toString = _File_toString;
 var $author$project$Validate$checkMultipleFixedConstraints = function (result) {
 	var fixedByPerson = A3(
 		$elm$core$List$foldl,
@@ -7632,7 +7460,7 @@ var $author$project$Validate$checkRankingValidity = function (result) {
 							var gapN = A2($elm$core$Maybe$withDefault, 0, firstGap);
 							return _List_fromArray(
 								[
-									person + (' has included fewer than ' + ($elm$core$String$fromInt(gapN) + (' courses at rank ' + ($elm$core$String$fromInt(gapN) + ' or below. Ties have been renumbered.'))))
+									person + (' included fewer than ' + ($elm$core$String$fromInt(gapN) + (' courses at rank ' + ($elm$core$String$fromInt(gapN) + ' or below. Ties have been renumbered.'))))
 								]);
 						} else {
 							return _List_Nil;
@@ -7685,127 +7513,115 @@ var $author$project$Main$update = F2(
 				if (_v1.$ === 'Ok') {
 					var inputData = _v1.a;
 					var validated = $author$project$Validate$validate(inputData);
-					var generator = $author$project$Matching$solve(validated.data);
+					var search = $author$project$Solver$initState(validated.data);
 					return _Utils_Tuple2(
-						model,
-						A2(
-							$elm$random$Random$generate,
-							function (results) {
-								return A2($author$project$Main$SolveCompleted, results, validated.warnings);
-							},
-							generator));
+						$author$project$Main$ShowingResults(
+							{copyState: $elm$core$Maybe$Nothing, searchState: search, warnings: validated.warnings}),
+						$elm$core$Platform$Cmd$none);
 				} else {
 					var errorMsg = _v1.a;
 					return _Utils_Tuple2(
 						$author$project$Main$ShowingError(errorMsg),
 						$elm$core$Platform$Cmd$none);
 				}
-			case 'SolveCompleted':
-				var results = msg.a;
-				var warnings = msg.b;
-				return _Utils_Tuple2(
-					A3(
-						$author$project$Main$ShowingResults,
-						results,
-						warnings,
-						{assignmentsCopied: false, summaryCopied: false}),
-					$elm$core$Platform$Cmd$none);
-			case 'CopyToClipboard':
-				switch (model.$) {
-					case 'ShowingResults':
-						var results = model.a;
-						var warnings = model.b;
-						var copyState = model.c;
+			case 'Frame':
+				if (model.$ === 'ShowingResults') {
+					var state = model.a;
+					if ($author$project$Solver$finished(state.searchState)) {
+						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+					} else {
+						var newSearchState = A2($author$project$Main$advanceMany, $author$project$Main$stepsPerFrame, state.searchState);
 						return _Utils_Tuple2(
-							A3(
-								$author$project$Main$ShowingResults,
-								results,
-								warnings,
+							$author$project$Main$ShowingResults(
 								_Utils_update(
-									copyState,
-									{assignmentsCopied: true})),
+									state,
+									{searchState: newSearchState})),
+							$elm$core$Platform$Cmd$none);
+					}
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			case 'CopyToClipboard':
+				var solutionIndex = msg.a;
+				if (model.$ === 'ShowingResults') {
+					var state = model.a;
+					var _v4 = $author$project$Solver$result(state.searchState);
+					if (_v4.$ === 'Just') {
+						var _v5 = _v4.a;
+						var assignments = _v5.b;
+						var _v6 = $elm$core$List$head(
+							A2($elm$core$List$drop, solutionIndex, assignments));
+						if (_v6.$ === 'Just') {
+							var assignment = _v6.a;
+							return _Utils_Tuple2(
+								$author$project$Main$ShowingResults(
+									_Utils_update(
+										state,
+										{
+											copyState: $elm$core$Maybe$Just($author$project$Main$AssignmentsCopied)
+										})),
+								$elm$core$Platform$Cmd$batch(
+									_List_fromArray(
+										[
+											$author$project$Main$copyToClipboard(
+											$author$project$Main$formatAssignmentForCopy(assignment)),
+											A2(
+											$elm$core$Task$perform,
+											function (_v7) {
+												return $author$project$Main$CopiedMessageHide;
+											},
+											$elm$core$Process$sleep(2000))
+										])));
+						} else {
+							return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+						}
+					} else {
+						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+					}
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+				}
+			case 'CopySummaryToClipboard':
+				if (model.$ === 'ShowingResults') {
+					var state = model.a;
+					var _v9 = $author$project$Solver$result(state.searchState);
+					if (_v9.$ === 'Just') {
+						var _v10 = _v9.a;
+						var dist = _v10.a;
+						return _Utils_Tuple2(
+							$author$project$Main$ShowingResults(
+								_Utils_update(
+									state,
+									{
+										copyState: $elm$core$Maybe$Just($author$project$Main$SummaryCopied)
+									})),
 							$elm$core$Platform$Cmd$batch(
 								_List_fromArray(
 									[
 										$author$project$Main$copyToClipboard(
-										$author$project$Main$formatAssignmentsForCopy(results.assignments)),
+										$author$project$Main$formatDistributionForCopy(dist)),
 										A2(
 										$elm$core$Task$perform,
-										function (_v3) {
+										function (_v11) {
 											return $author$project$Main$CopiedMessageHide;
 										},
 										$elm$core$Process$sleep(2000))
 									])));
-					case 'NoResults':
+					} else {
 						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-					default:
-						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-				}
-			case 'CopySummaryToClipboard':
-				switch (model.$) {
-					case 'ShowingResults':
-						var results = model.a;
-						var warnings = model.b;
-						var copyState = model.c;
-						return _Utils_Tuple2(
-							A3(
-								$author$project$Main$ShowingResults,
-								results,
-								warnings,
-								_Utils_update(
-									copyState,
-									{summaryCopied: true})),
-							$elm$core$Platform$Cmd$batch(
-								_List_fromArray(
-									[
-										$author$project$Main$copyToClipboard(
-										$author$project$Main$formatDistributionForCopy(results.distribution)),
-										A2(
-										$elm$core$Task$perform,
-										function (_v5) {
-											return $author$project$Main$SummaryCopiedMessageHide;
-										},
-										$elm$core$Process$sleep(2000))
-									])));
-					case 'NoResults':
-						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-					default:
-						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-				}
-			case 'CopiedMessageHide':
-				switch (model.$) {
-					case 'ShowingResults':
-						var results = model.a;
-						var warnings = model.b;
-						var copyState = model.c;
-						return _Utils_Tuple2(
-							A3(
-								$author$project$Main$ShowingResults,
-								results,
-								warnings,
-								_Utils_update(
-									copyState,
-									{assignmentsCopied: false})),
-							$elm$core$Platform$Cmd$none);
-					case 'NoResults':
-						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
-					default:
-						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
+					}
+				} else {
+					return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
 				}
 			default:
 				switch (model.$) {
 					case 'ShowingResults':
-						var results = model.a;
-						var warnings = model.b;
-						var copyState = model.c;
+						var state = model.a;
 						return _Utils_Tuple2(
-							A3(
-								$author$project$Main$ShowingResults,
-								results,
-								warnings,
+							$author$project$Main$ShowingResults(
 								_Utils_update(
-									copyState,
-									{summaryCopied: false})),
+									state,
+									{copyState: $elm$core$Maybe$Nothing})),
 							$elm$core$Platform$Cmd$none);
 					case 'NoResults':
 						return _Utils_Tuple2(model, $elm$core$Platform$Cmd$none);
@@ -8043,9 +7859,9 @@ var $author$project$Main$viewInstructions = A2(
 						[
 							$elm$html$Html$text('Courses,         Course 1, Course 2, Course 3\n'),
 							$elm$html$Html$text('Number of slots, 2,        1,        1\n'),
-							$elm$html$Html$text('Person A,        *1,       2,        -\n'),
+							$elm$html$Html$text('Person A,        *1,       2,        3\n'),
 							$elm$html$Html$text('Person B,        2,        1,        3\n'),
-							$elm$html$Html$text('Person C,        -,        2,        1\n'),
+							$elm$html$Html$text('Person C,        2,        -,        1\n'),
 							$elm$html$Html$text('Person D,        1,        3,        2')
 						]))
 				])),
@@ -8059,40 +7875,62 @@ var $author$project$Main$viewInstructions = A2(
 					_List_Nil,
 					_List_fromArray(
 						[
-							$elm$html$Html$text('Person A is fixed to Course 1 and cannot be assigned to Course 3')
+							$elm$html$Html$text('Person A must be assigned to Course 1')
 						])),
 					A2(
 					$elm$html$Html$li,
 					_List_Nil,
 					_List_fromArray(
 						[
-							$elm$html$Html$text('Person C cannot be assigned to Course 1')
+							$elm$html$Html$text('Person C cannot be assigned to Course 2')
 						]))
-				])),
-			A2(
-			$elm$html$Html$p,
-			_List_fromArray(
-				[
-					$elm$html$Html$Attributes$class('example-note')
-				]),
-			_List_fromArray(
-				[
-					$elm$html$Html$text('See the '),
-					A2(
-					$elm$html$Html$a,
-					_List_fromArray(
-						[
-							$elm$html$Html$Attributes$href('https://github.com/jefelino/pref-match#data-format'),
-							$elm$html$Html$Attributes$target('_blank')
-						]),
-					_List_fromArray(
-						[
-							$elm$html$Html$text('full documentation')
-						])),
-					$elm$html$Html$text(' for more details.')
 				]))
 		]));
-var $author$project$Main$CopyToClipboard = {$: 'CopyToClipboard'};
+var $author$project$Matching$diff = F2(
+	function (a1, a2) {
+		return A2(
+			$elm$core$Dict$filter,
+			F2(
+				function (person, _v0) {
+					var course1 = _v0.a;
+					var _v1 = A2($elm$core$Dict$get, person, a1);
+					if (_v1.$ === 'Nothing') {
+						return true;
+					} else {
+						var _v2 = _v1.a;
+						var course2 = _v2.a;
+						return !_Utils_eq(course1, course2);
+					}
+				}),
+			a2);
+	});
+var $author$project$Matching$tidy = function (result) {
+	if (result.$ === 'Nothing') {
+		return $elm$core$Maybe$Nothing;
+	} else {
+		if (!result.a.b.b) {
+			var _v1 = result.a;
+			return $elm$core$Maybe$Nothing;
+		} else {
+			var _v2 = result.a;
+			var dist = _v2.a;
+			var _v3 = _v2.b;
+			var first = _v3.a;
+			var rest = _v3.b;
+			return $elm$core$Maybe$Just(
+				_Utils_Tuple2(
+					dist,
+					A2(
+						$elm$core$List$cons,
+						first,
+						A2(
+							$elm$core$List$map,
+							$author$project$Matching$diff(first),
+							rest))));
+		}
+	}
+};
+var $author$project$Main$CopySummaryToClipboard = {$: 'CopySummaryToClipboard'};
 var $elm$html$Html$button = _VirtualDom_node('button');
 var $elm$svg$Svg$Attributes$d = _VirtualDom_attribute('d');
 var $elm$svg$Svg$Attributes$fill = _VirtualDom_attribute('fill');
@@ -8118,102 +7956,17 @@ var $elm$svg$Svg$trustedNode = _VirtualDom_nodeNS('http://www.w3.org/2000/svg');
 var $elm$svg$Svg$path = $elm$svg$Svg$trustedNode('path');
 var $elm$html$Html$span = _VirtualDom_node('span');
 var $elm$svg$Svg$svg = $elm$svg$Svg$trustedNode('svg');
-var $elm$html$Html$Attributes$title = $elm$html$Html$Attributes$stringProperty('title');
 var $elm$html$Html$table = _VirtualDom_node('table');
 var $elm$html$Html$tbody = _VirtualDom_node('tbody');
 var $elm$html$Html$th = _VirtualDom_node('th');
 var $elm$html$Html$thead = _VirtualDom_node('thead');
+var $elm$html$Html$Attributes$title = $elm$html$Html$Attributes$stringProperty('title');
 var $elm$html$Html$tr = _VirtualDom_node('tr');
-var $elm$html$Html$td = _VirtualDom_node('td');
-var $author$project$Main$viewAssignmentRow = function (assignment) {
-	return A2(
-		$elm$html$Html$tr,
-		_List_Nil,
-		_List_fromArray(
-			[
-				A2(
-				$elm$html$Html$td,
-				_List_Nil,
-				_List_fromArray(
-					[
-						$elm$html$Html$text(assignment.course)
-					])),
-				A2(
-				$elm$html$Html$td,
-				_List_Nil,
-				_List_fromArray(
-					[
-						$elm$html$Html$text(assignment.person)
-					])),
-				A2(
-				$elm$html$Html$td,
-				_List_Nil,
-				_List_fromArray(
-					[
-						$elm$html$Html$text(
-						function () {
-							var _v0 = assignment.rank;
-							if (_v0.$ === 'Just') {
-								var r = _v0.a;
-								return $elm$core$String$fromInt(r);
-							} else {
-								return 'N/A';
-							}
-						}())
-					]))
-			]));
-};
-var $author$project$Main$viewAssignmentsTable = function (assignments) {
-	return A2(
-		$elm$html$Html$table,
-		_List_fromArray(
-			[
-				$elm$html$Html$Attributes$class('results-table')
-			]),
-		_List_fromArray(
-			[
-				A2(
-				$elm$html$Html$thead,
-				_List_Nil,
-				_List_fromArray(
-					[
-						A2(
-						$elm$html$Html$tr,
-						_List_Nil,
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$th,
-								_List_Nil,
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Course')
-									])),
-								A2(
-								$elm$html$Html$th,
-								_List_Nil,
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Person')
-									])),
-								A2(
-								$elm$html$Html$th,
-								_List_Nil,
-								_List_fromArray(
-									[
-										$elm$html$Html$text('Preference Rank')
-									]))
-							]))
-					])),
-				A2(
-				$elm$html$Html$tbody,
-				_List_Nil,
-				A2($elm$core$List$map, $author$project$Main$viewAssignmentRow, assignments))
-			]));
-};
 var $elm$svg$Svg$Attributes$viewBox = _VirtualDom_attribute('viewBox');
-var $author$project$Main$CopySummaryToClipboard = {$: 'CopySummaryToClipboard'};
-var $author$project$Main$viewDistributionItem = function (d) {
+var $elm$html$Html$td = _VirtualDom_node('td');
+var $author$project$Main$viewDistributionItem = function (_v0) {
+	var rank = _v0.a;
+	var count = _v0.b;
 	return A2(
 		$elm$html$Html$tr,
 		_List_Nil,
@@ -8225,7 +7978,7 @@ var $author$project$Main$viewDistributionItem = function (d) {
 				_List_fromArray(
 					[
 						$elm$html$Html$text(
-						$author$project$Main$ordinal(d.rank))
+						$author$project$Main$ordinal(rank))
 					])),
 				A2(
 				$elm$html$Html$td,
@@ -8233,13 +7986,21 @@ var $author$project$Main$viewDistributionItem = function (d) {
 				_List_fromArray(
 					[
 						$elm$html$Html$text(
-						$elm$core$String$fromInt(d.count))
+						$elm$core$String$fromInt(count))
 					]))
 			]));
 };
 var $elm$svg$Svg$Attributes$width = _VirtualDom_attribute('width');
 var $author$project$Main$viewDistribution = F2(
-	function (dist, showCopied) {
+	function (dist, copyState) {
+		var showCopied = function () {
+			if ((copyState.$ === 'Just') && (copyState.a.$ === 'SummaryCopied')) {
+				var _v1 = copyState.a;
+				return true;
+			} else {
+				return false;
+			}
+		}();
 		return A2(
 			$elm$html$Html$div,
 			_List_fromArray(
@@ -8360,7 +8121,264 @@ var $author$project$Main$viewDistribution = F2(
 							A2(
 							$elm$html$Html$tbody,
 							_List_Nil,
-							A2($elm$core$List$map, $author$project$Main$viewDistributionItem, dist))
+							A2(
+								$elm$core$List$map,
+								$author$project$Main$viewDistributionItem,
+								A2(
+									$elm$core$List$sortBy,
+									$elm$core$Tuple$first,
+									$elm$core$Dict$toList(dist))))
+						]))
+				]));
+	});
+var $author$project$Main$viewProgress = function (_v0) {
+	return A2(
+		$elm$html$Html$div,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('progress-container')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('progress-message')
+					]),
+				_List_fromArray(
+					[
+						$elm$html$Html$text('Searching...')
+					])),
+				A2(
+				$elm$html$Html$div,
+				_List_fromArray(
+					[
+						$elm$html$Html$Attributes$class('progress-bar-container')
+					]),
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$div,
+						_List_fromArray(
+							[
+								$elm$html$Html$Attributes$class('progress-bar indeterminate')
+							]),
+						_List_Nil)
+					]))
+			]));
+};
+var $author$project$Main$CopyToClipboard = function (a) {
+	return {$: 'CopyToClipboard', a: a};
+};
+var $author$project$Main$viewAssignmentRow = function (_v0) {
+	var person = _v0.a;
+	var _v1 = _v0.b;
+	var course = _v1.a;
+	var rank = _v1.b;
+	return A2(
+		$elm$html$Html$tr,
+		_List_Nil,
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$td,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(person)
+					])),
+				A2(
+				$elm$html$Html$td,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(course)
+					])),
+				A2(
+				$elm$html$Html$td,
+				_List_Nil,
+				_List_fromArray(
+					[
+						$elm$html$Html$text(
+						$elm$core$String$fromInt(rank))
+					]))
+			]));
+};
+var $author$project$Main$viewAssignmentsTable = function (assignment) {
+	return A2(
+		$elm$html$Html$table,
+		_List_fromArray(
+			[
+				$elm$html$Html$Attributes$class('results-table')
+			]),
+		_List_fromArray(
+			[
+				A2(
+				$elm$html$Html$thead,
+				_List_Nil,
+				_List_fromArray(
+					[
+						A2(
+						$elm$html$Html$tr,
+						_List_Nil,
+						_List_fromArray(
+							[
+								A2(
+								$elm$html$Html$th,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Person')
+									])),
+								A2(
+								$elm$html$Html$th,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Course')
+									])),
+								A2(
+								$elm$html$Html$th,
+								_List_Nil,
+								_List_fromArray(
+									[
+										$elm$html$Html$text('Preference Rank')
+									]))
+							]))
+					])),
+				A2(
+				$elm$html$Html$tbody,
+				_List_Nil,
+				A2(
+					$elm$core$List$map,
+					$author$project$Main$viewAssignmentRow,
+					A2(
+						$elm$core$List$sortBy,
+						function (_v0) {
+							var person = _v0.a;
+							var _v1 = _v0.b;
+							var course = _v1.a;
+							return _Utils_Tuple2(course, person);
+						},
+						$elm$core$Dict$toList(assignment))))
+			]));
+};
+var $author$project$Main$viewSingleAssignment = F3(
+	function (copyState, index, assignment) {
+		var solutionHeader = (index > 0) ? A2(
+			$elm$html$Html$h2,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('solution-header')
+				]),
+			_List_fromArray(
+				[
+					$elm$html$Html$text(
+					'Variation ' + $elm$core$String$fromInt(index))
+				])) : $elm$html$Html$text('');
+		var showAssignmentCopied = function () {
+			if ((copyState.$ === 'Just') && (copyState.a.$ === 'AssignmentsCopied')) {
+				var _v1 = copyState.a;
+				return true;
+			} else {
+				return false;
+			}
+		}();
+		return A2(
+			$elm$html$Html$div,
+			_List_fromArray(
+				[
+					$elm$html$Html$Attributes$class('single-solution')
+				]),
+			_List_fromArray(
+				[
+					solutionHeader,
+					A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('results-content')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$div,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('distribution-header')
+								]),
+							_List_fromArray(
+								[
+									A2(
+									$elm$html$Html$h3,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$class('distribution-caption')
+										]),
+									_List_fromArray(
+										[
+											$elm$html$Html$text('Assignments')
+										])),
+									A2(
+									$elm$html$Html$div,
+									_List_fromArray(
+										[
+											$elm$html$Html$Attributes$class('copy-container')
+										]),
+									_List_fromArray(
+										[
+											showAssignmentCopied ? A2(
+											$elm$html$Html$span,
+											_List_fromArray(
+												[
+													$elm$html$Html$Attributes$class('copied-message')
+												]),
+											_List_fromArray(
+												[
+													$elm$html$Html$text('Copied!')
+												])) : $elm$html$Html$text(''),
+											A2(
+											$elm$html$Html$button,
+											_List_fromArray(
+												[
+													$elm$html$Html$Attributes$class('copy-button'),
+													$elm$html$Html$Events$onClick(
+													$author$project$Main$CopyToClipboard(index)),
+													$elm$html$Html$Attributes$title('Copy to clipboard')
+												]),
+											_List_fromArray(
+												[
+													A2(
+													$elm$svg$Svg$svg,
+													_List_fromArray(
+														[
+															$elm$svg$Svg$Attributes$width('16'),
+															$elm$svg$Svg$Attributes$height('16'),
+															$elm$svg$Svg$Attributes$viewBox('0 0 16 16'),
+															$elm$svg$Svg$Attributes$fill('currentColor')
+														]),
+													_List_fromArray(
+														[
+															A2(
+															$elm$svg$Svg$path,
+															_List_fromArray(
+																[
+																	$elm$svg$Svg$Attributes$d('M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z')
+																]),
+															_List_Nil),
+															A2(
+															$elm$svg$Svg$path,
+															_List_fromArray(
+																[
+																	$elm$svg$Svg$Attributes$d('M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z')
+																]),
+															_List_Nil)
+														]))
+												]))
+										]))
+								])),
+							$author$project$Main$viewAssignmentsTable(assignment)
 						]))
 				]));
 	});
@@ -8427,105 +8445,69 @@ var $author$project$Main$viewResults = function (model) {
 							]))
 					]));
 		default:
-			var results = model.a;
-			var warnings = model.b;
-			var copyState = model.c;
-			return A2(
-				$elm$html$Html$div,
-				_List_fromArray(
-					[
-						$elm$html$Html$Attributes$class('results')
-					]),
-				_List_fromArray(
-					[
-						$author$project$Main$viewWarnings(warnings),
-						A2(
-						$elm$html$Html$div,
-						_List_fromArray(
-							[
-								$elm$html$Html$Attributes$class('results-content')
-							]),
-						_List_fromArray(
-							[
-								A2(
-								$elm$html$Html$div,
-								_List_fromArray(
-									[
-										$elm$html$Html$Attributes$class('distribution-header')
-									]),
-								_List_fromArray(
-									[
-										A2(
-										$elm$html$Html$h3,
-										_List_fromArray(
-											[
-												$elm$html$Html$Attributes$class('distribution-caption')
-											]),
-										_List_fromArray(
-											[
-												$elm$html$Html$text('Assignments')
-											])),
-										A2(
-										$elm$html$Html$div,
-										_List_fromArray(
-											[
-												$elm$html$Html$Attributes$class('copy-container')
-											]),
-										_List_fromArray(
-											[
-												copyState.assignmentsCopied ? A2(
-												$elm$html$Html$span,
-												_List_fromArray(
-													[
-														$elm$html$Html$Attributes$class('copied-message')
-													]),
-												_List_fromArray(
-													[
-														$elm$html$Html$text('Copied!')
-													])) : $elm$html$Html$text(''),
-												A2(
-												$elm$html$Html$button,
-												_List_fromArray(
-													[
-														$elm$html$Html$Attributes$class('copy-button'),
-														$elm$html$Html$Events$onClick($author$project$Main$CopyToClipboard),
-														$elm$html$Html$Attributes$title('Copy to clipboard')
-													]),
-												_List_fromArray(
-													[
-														A2(
-														$elm$svg$Svg$svg,
-														_List_fromArray(
-															[
-																$elm$svg$Svg$Attributes$width('16'),
-																$elm$svg$Svg$Attributes$height('16'),
-																$elm$svg$Svg$Attributes$viewBox('0 0 16 16'),
-																$elm$svg$Svg$Attributes$fill('currentColor')
-															]),
-														_List_fromArray(
-															[
-																A2(
-																$elm$svg$Svg$path,
-																_List_fromArray(
-																	[
-																		$elm$svg$Svg$Attributes$d('M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z')
-																	]),
-																_List_Nil),
-																A2(
-																$elm$svg$Svg$path,
-																_List_fromArray(
-																	[
-																		$elm$svg$Svg$Attributes$d('M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z')
-																	]),
-																_List_Nil)
-															]))
-													]))
-											]))
-									])),
-								$author$project$Main$viewAssignmentsTable(results.assignments)
-							])),
-						A2($author$project$Main$viewDistribution, results.distribution, copyState.summaryCopied)
-					]));
+			var state = model.a;
+			var _v1 = $author$project$Matching$tidy(
+				$author$project$Solver$result(state.searchState));
+			if (_v1.$ === 'Nothing') {
+				return $author$project$Solver$finished(state.searchState) ? A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('error')
+						]),
+					_List_fromArray(
+						[
+							A2(
+							$elm$html$Html$h3,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text('No solution found')
+								])),
+							A2(
+							$elm$html$Html$p,
+							_List_Nil,
+							_List_fromArray(
+								[
+									$elm$html$Html$text('Unable to create a valid assignment with the given constraints. Try removing some constraints.')
+								]))
+						])) : $author$project$Main$viewProgress(state.searchState);
+			} else {
+				var _v2 = _v1.a;
+				var dist = _v2.a;
+				var assignments = _v2.b;
+				return A2(
+					$elm$html$Html$div,
+					_List_fromArray(
+						[
+							$elm$html$Html$Attributes$class('results')
+						]),
+					_List_fromArray(
+						[
+							$author$project$Solver$finished(state.searchState) ? $elm$html$Html$text('') : $author$project$Main$viewProgress(state.searchState),
+							$author$project$Main$viewWarnings(state.warnings),
+							($elm$core$List$length(assignments) > 1) ? A2(
+							$elm$html$Html$div,
+							_List_fromArray(
+								[
+									$elm$html$Html$Attributes$class('solution-count-header')
+								]),
+							_List_fromArray(
+								[
+									$elm$html$Html$text(
+									'Found ' + ($elm$core$String$fromInt(
+										$elm$core$List$length(assignments)) + ' solutions tied for first place'))
+								])) : $elm$html$Html$text(''),
+							A2($author$project$Main$viewDistribution, dist, state.copyState),
+							A2(
+							$elm$html$Html$div,
+							_List_Nil,
+							A2(
+								$elm$core$List$indexedMap,
+								$author$project$Main$viewSingleAssignment(state.copyState),
+								assignments))
+						]));
+			}
 	}
 };
 var $elm$virtual_dom$VirtualDom$node = function (tag) {
@@ -8539,7 +8521,7 @@ var $author$project$Main$viewStyles = A3(
 	_List_Nil,
 	_List_fromArray(
 		[
-			$elm$html$Html$text('\n        body {\n            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;\n            line-height: 1.6;\n            color: #333;\n            background: #f5f5f5;\n            margin: 0;\n            padding: 0;\n        }\n        \n        .container {\n            max-width: 900px;\n            margin: 0 auto;\n            padding: 20px;\n            background: white;\n            min-height: 100vh;\n        }\n        \n        .header {\n            text-align: center;\n            padding: 40px 0 20px;\n            border-bottom: 2px solid #e0e0e0;\n            margin-bottom: 30px;\n        }\n        \n        .header h1 {\n            margin: 0;\n            font-size: 3em;\n            color: #2c3e50;\n        }\n        \n        .subtitle {\n            color: #666;\n            font-size: 1.1em;\n            margin-top: 10px;\n        }\n        \n        .subtitle a {\n            color: #3498db;\n            text-decoration: none;\n        }\n        \n        .subtitle a:hover {\n            text-decoration: underline;\n        }\n        \n        .instructions {\n            background: #f8f9fa;\n            border-left: 4px solid #3498db;\n            padding: 20px;\n            margin: 30px 0;\n            border-radius: 4px;\n        }\n        \n        .instructions h2 {\n            margin-top: 0;\n            color: #2c3e50;\n        }\n        \n        .instructions h3 {\n            margin-top: 20px;\n            margin-bottom: 10px;\n            color: #2c3e50;\n            font-size: 1.1em;\n        }\n        \n        .instructions p {\n            margin: 15px 0;\n        }\n        \n        .example-code {\n            background: #2c3e50;\n            color: #ecf0f1;\n            padding: 15px;\n            border-radius: 6px;\n            overflow-x: auto;\n            margin: 15px 0;\n        }\n        \n        .example-code code {\n            font-family: \'Monaco\', \'Menlo\', \'Consolas\', monospace;\n            font-size: 0.9em;\n            line-height: 1.5;\n        }\n        \n        .inline-code {\n            background: #e8f4f8;\n            color: #2c3e50;\n            padding: 2px 6px;\n            border-radius: 3px;\n            font-family: \'Monaco\', \'Menlo\', \'Consolas\', monospace;\n            font-size: 0.9em;\n        }\n        \n        .tip {\n            background: #fff8dc;\n            border-left: 4px solid #f39c12;\n            padding: 12px;\n            margin: 15px 0;\n            border-radius: 4px;\n        }\n        \n        .instructions ol {\n            margin: 15px 0;\n        }\n        \n        .instructions li {\n            margin: 8px 0;\n        }\n        \n        .example-note {\n            margin-top: 15px;\n            font-style: italic;\n            color: #666;\n        }\n        \n        .example-note a {\n            color: #3498db;\n        }\n        \n        .upload-section {\n            text-align: center;\n            padding: 40px 0;\n        }\n        \n        .upload-button {\n            background: #3498db;\n            color: white;\n            border: none;\n            padding: 15px 40px;\n            font-size: 1.2em;\n            border-radius: 6px;\n            cursor: pointer;\n            transition: background 0.3s;\n        }\n        \n        .upload-button:hover {\n            background: #2980b9;\n        }\n        \n        .error {\n            background: #fee;\n            border: 1px solid #fcc;\n            border-left: 4px solid #e74c3c;\n            padding: 20px;\n            margin: 30px 0;\n            border-radius: 4px;\n        }\n        \n        .error h3 {\n            margin-top: 0;\n            color: #c0392b;\n        }\n        \n        .error p {\n            color: #555;\n            margin-bottom: 0;\n        }\n        \n        .warnings {\n            background: #fffbf0;\n            border: 1px solid #ffeaa7;\n            border-left: 4px solid #fdcb6e;\n            padding: 20px;\n            margin: 30px 0;\n            border-radius: 4px;\n        }\n        \n        .warnings h3 {\n            margin-top: 0;\n            color: #d68910;\n        }\n        \n        .warnings ul {\n            margin: 10px 0 0 0;\n            padding-left: 20px;\n        }\n        \n        .warnings li {\n            color: #555;\n            margin: 5px 0;\n        }\n        \n        .results {\n            margin-top: 40px;\n        }\n        \n        .results-content {\n            position: relative;\n            background: #f8f9fa;\n            border: 1px solid #d1d5da;\n            border-radius: 6px;\n            padding: 20px;\n            margin-bottom: 20px;\n        }\n        \n        .copy-container {\n            position: absolute;\n            top: 12px;\n            right: 12px;\n            display: flex;\n            align-items: center;\n            gap: 8px;\n        }\n        \n        .copy-button {\n            background: white;\n            color: #586069;\n            border: 1px solid #d1d5da;\n            padding: 6px;\n            border-radius: 6px;\n            cursor: pointer;\n            transition: all 0.2s;\n            display: flex;\n            align-items: center;\n            justify-content: center;\n        }\n        \n        .copy-button:hover {\n            background: #f3f4f6;\n            border-color: #9ca3af;\n            color: #24292e;\n        }\n        \n        .copied-message {\n            color: #28a745;\n            font-size: 14px;\n            font-weight: 500;\n            animation: fadeIn 0.2s ease-in;\n        }\n        \n        @keyframes fadeIn {\n            from { opacity: 0; }\n            to { opacity: 1; }\n        }\n        \n        .distribution {\n            position: relative;\n            background: #f8f9fa;\n            border: 1px solid #d1d5da;\n            padding: 20px;\n            border-radius: 6px;\n            margin-bottom: 20px;\n            margin-top: 20px;\n        }\n        \n        .distribution-header {\n            display: flex;\n            justify-content: space-between;\n            align-items: center;\n            margin-bottom: 12px;\n        }\n        \n        .distribution-caption {\n            margin: 0;\n            font-size: 1.2em;\n            font-weight: 600;\n            color: #24292e;\n        }\n        \n        .results-table {\n            width: 100%;\n            border-collapse: collapse;\n            background: white;\n            border-radius: 6px;\n            overflow: hidden;\n        }\n        \n        .results-table th,\n        .results-table td {\n            padding: 12px;\n            text-align: left;\n        }\n        \n        .results-table th {\n            background: #34495e;\n            color: white;\n            font-weight: 600;\n        }\n        \n        .results-table tbody tr {\n            border-bottom: 1px solid #e1e4e8;\n        }\n        \n        .results-table tbody tr:last-child {\n            border-bottom: none;\n        }\n        \n        .results-table tr:hover {\n            background: #f6f8fa;\n        }\n        \n        .download-section {\n            text-align: center;\n            margin-top: 30px;\n        }\n        \n        .download-button {\n            background: #27ae60;\n            color: white;\n            border: none;\n            padding: 12px 30px;\n            font-size: 1.1em;\n            border-radius: 6px;\n            cursor: pointer;\n            transition: background 0.3s;\n        }\n        \n        .download-button:hover {\n            background: #229954;\n        }\n        \n        .progress-container {\n            text-align: center;\n            padding: 40px 20px;\n        }\n        \n        .progress-message {\n            font-size: 1.3em;\n            color: #2c3e50;\n            margin-bottom: 20px;\n            font-weight: 500;\n        }\n        \n        .progress-bar-container {\n            background: #e0e0e0;\n            border-radius: 12px;\n            height: 24px;\n            overflow: hidden;\n            margin: 20px auto;\n            max-width: 400px;\n            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);\n        }\n        \n        .progress-bar {\n            background: linear-gradient(90deg, #3498db 0%, #2980b9 100%);\n            height: 100%;\n            border-radius: 12px;\n            transition: width 0.3s ease;\n            display: flex;\n            align-items: center;\n            justify-content: flex-end;\n            padding-right: 10px;\n            box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);\n        }\n        \n        .progress-text {\n            color: #2c3e50;\n            font-size: 1.1em;\n            margin-top: 10px;\n            font-weight: 500;\n        }\n    ')
+			$elm$html$Html$text('\n        body {\n            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;\n            line-height: 1.6;\n            color: #333;\n            background: #f5f5f5;\n            margin: 0;\n            padding: 0;\n        }\n        \n        .container {\n            max-width: 900px;\n            margin: 0 auto;\n            padding: 20px;\n            background: white;\n            min-height: 100vh;\n        }\n        \n        .header {\n            text-align: center;\n            padding: 40px 0 20px;\n            border-bottom: 2px solid #e0e0e0;\n            margin-bottom: 30px;\n        }\n        \n        .header h1 {\n            margin: 0;\n            font-size: 3em;\n            color: #2c3e50;\n        }\n        \n        .subtitle {\n            color: #666;\n            font-size: 1.1em;\n            margin-top: 10px;\n        }\n        \n        .subtitle a {\n            color: #3498db;\n            text-decoration: none;\n        }\n        \n        .subtitle a:hover {\n            text-decoration: underline;\n        }\n        \n        .instructions {\n            background: #f8f9fa;\n            border-left: 4px solid #3498db;\n            padding: 20px;\n            margin: 30px 0;\n            border-radius: 4px;\n        }\n        \n        .instructions h2 {\n            margin-top: 0;\n            color: #2c3e50;\n        }\n        \n        .instructions h3 {\n            margin-top: 20px;\n            margin-bottom: 10px;\n            color: #2c3e50;\n            font-size: 1.1em;\n        }\n        \n        .instructions p {\n            margin: 15px 0;\n        }\n        \n        .example-code {\n            background: #2c3e50;\n            color: #ecf0f1;\n            padding: 15px;\n            border-radius: 6px;\n            overflow-x: auto;\n            margin: 15px 0;\n        }\n        \n        .example-code code {\n            font-family: \'Monaco\', \'Menlo\', \'Consolas\', monospace;\n            font-size: 0.9em;\n            line-height: 1.5;\n        }\n        \n        .inline-code {\n            background: #e8f4f8;\n            color: #2c3e50;\n            padding: 2px 6px;\n            border-radius: 3px;\n            font-family: \'Monaco\', \'Menlo\', \'Consolas\', monospace;\n            font-size: 0.9em;\n        }\n        \n        .tip {\n            background: #fff8dc;\n            border-left: 4px solid #f39c12;\n            padding: 12px;\n            margin: 15px 0;\n            border-radius: 4px;\n        }\n        \n        .instructions ol {\n            margin: 15px 0;\n        }\n        \n        .instructions li {\n            margin: 8px 0;\n        }\n        \n        .example-note {\n            margin-top: 15px;\n            font-style: italic;\n            color: #666;\n        }\n        \n        .example-note a {\n            color: #3498db;\n        }\n        \n        .upload-section {\n            text-align: center;\n            padding: 40px 0;\n        }\n        \n        .upload-button {\n            background: #3498db;\n            color: white;\n            border: none;\n            padding: 15px 40px;\n            font-size: 1.2em;\n            border-radius: 6px;\n            cursor: pointer;\n            transition: background 0.3s;\n        }\n        \n        .upload-button:hover {\n            background: #2980b9;\n        }\n        \n        .error {\n            background: #fee;\n            border: 1px solid #fcc;\n            border-left: 4px solid #e74c3c;\n            padding: 20px;\n            margin: 30px 0;\n            border-radius: 4px;\n        }\n        \n        .error h3 {\n            margin-top: 0;\n            color: #c0392b;\n        }\n        \n        .error p {\n            color: #555;\n            margin-bottom: 0;\n        }\n        \n        .warnings {\n            background: #fffbf0;\n            border: 1px solid #ffeaa7;\n            border-left: 4px solid #fdcb6e;\n            padding: 20px;\n            margin: 30px 0;\n            border-radius: 4px;\n        }\n        \n        .warnings h3 {\n            margin-top: 0;\n            color: #d68910;\n        }\n        \n        .warnings ul {\n            margin: 10px 0 0 0;\n            padding-left: 20px;\n        }\n        \n        .warnings li {\n            color: #555;\n            margin: 5px 0;\n        }\n        \n        .results {\n            margin-top: 40px;\n        }\n        \n        .results-content {\n            position: relative;\n            background: #f8f9fa;\n            border: 1px solid #d1d5da;\n            border-radius: 6px;\n            padding: 20px;\n            margin-bottom: 20px;\n        }\n        \n        .copy-container {\n            position: absolute;\n            top: 12px;\n            right: 12px;\n            display: flex;\n            align-items: center;\n            gap: 8px;\n        }\n        \n        .copy-button {\n            background: white;\n            color: #586069;\n            border: 1px solid #d1d5da;\n            padding: 6px;\n            border-radius: 6px;\n            cursor: pointer;\n            transition: all 0.2s;\n            display: flex;\n            align-items: center;\n            justify-content: center;\n        }\n        \n        .copy-button:hover {\n            background: #f3f4f6;\n            border-color: #9ca3af;\n            color: #24292e;\n        }\n        \n        .copied-message {\n            color: #28a745;\n            font-size: 14px;\n            font-weight: 500;\n            animation: fadeIn 0.2s ease-in;\n        }\n        \n        @keyframes fadeIn {\n            from { opacity: 0; }\n            to { opacity: 1; }\n        }\n        \n        .distribution {\n            position: relative;\n            background: #f8f9fa;\n            border: 1px solid #d1d5da;\n            padding: 20px;\n            border-radius: 6px;\n            margin-bottom: 20px;\n            margin-top: 20px;\n        }\n        \n        .distribution-header {\n            display: flex;\n            justify-content: space-between;\n            align-items: center;\n            margin-bottom: 12px;\n        }\n        \n        .distribution-caption {\n            margin: 0;\n            font-size: 1.2em;\n            font-weight: 600;\n            color: #24292e;\n        }\n        \n        .results-table {\n            width: 100%;\n            border-collapse: collapse;\n            background: white;\n            border-radius: 6px;\n            overflow: hidden;\n        }\n        \n        .results-table th,\n        .results-table td {\n            padding: 12px;\n            text-align: left;\n        }\n        \n        .results-table th {\n            background: #34495e;\n            color: white;\n            font-weight: 600;\n        }\n        \n        .results-table tbody tr {\n            border-bottom: 1px solid #e1e4e8;\n        }\n        \n        .results-table tbody tr:last-child {\n            border-bottom: none;\n        }\n        \n        .results-table tr:hover {\n            background: #f6f8fa;\n        }\n        \n        .download-section {\n            text-align: center;\n            margin-top: 30px;\n        }\n        \n        .download-button {\n            background: #27ae60;\n            color: white;\n            border: none;\n            padding: 12px 30px;\n            font-size: 1.1em;\n            border-radius: 6px;\n            cursor: pointer;\n            transition: background 0.3s;\n        }\n        \n        .download-button:hover {\n            background: #229954;\n        }\n        \n        .progress-container {\n            text-align: center;\n            padding: 40px 20px;\n        }\n        \n        .progress-message {\n            font-size: 1.3em;\n            color: #2c3e50;\n            margin-bottom: 20px;\n            font-weight: 500;\n        }\n        \n        .progress-bar-container {\n            background: #e0e0e0;\n            border-radius: 12px;\n            height: 24px;\n            overflow: hidden;\n            margin: 20px auto;\n            max-width: 400px;\n            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);\n        }\n        \n        .progress-bar {\n            background: linear-gradient(90deg, #3498db 0%, #2980b9 100%);\n            height: 100%;\n            border-radius: 12px;\n            transition: width 0.3s ease;\n            display: flex;\n            align-items: center;\n            justify-content: flex-end;\n            padding-right: 10px;\n            box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);\n        }\n\n        .progress-bar.indeterminate {\n            width: 40%;\n            background: linear-gradient(90deg, rgba(255,255,255,0.15), rgba(255,255,255,0.45), rgba(255,255,255,0.15));\n            animation: indeterminate 1.2s infinite linear;\n            transform: translateX(-150%);\n        }\n\n        @keyframes indeterminate {\n            0% { transform: translateX(-150%); }\n            50% { transform: translateX(50%); }\n            100% { transform: translateX(150%); }\n        }\n        \n        .progress-text {\n            color: #2c3e50;\n            font-size: 1.1em;\n            margin-top: 10px;\n            font-weight: 500;\n        }\n        \n        .solution-count-header {\n            background: #e7f3ff;\n            border: 1px solid #b3d9ff;\n            border-radius: 6px;\n            padding: 12px 16px;\n            margin-bottom: 20px;\n            color: #0366d6;\n            font-weight: 600;\n            text-align: center;\n        }\n        \n        .single-solution {\n            margin-bottom: 40px;\n        }\n        \n        .single-solution:not(:last-child) {\n            padding-bottom: 40px;\n            border-bottom: 3px solid #e1e4e8;\n        }\n        \n        .solution-header {\n            color: #0366d6;\n            font-size: 1.5em;\n            margin: 0 0 20px 0;\n            padding: 12px 16px;\n            background: #f6f8fa;\n            border-left: 4px solid #0366d6;\n            border-radius: 4px;\n        }\n    ')
 		]));
 var $author$project$Main$UploadRequested = {$: 'UploadRequested'};
 var $author$project$Main$viewUploadSection = A2(

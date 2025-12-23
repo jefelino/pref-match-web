@@ -1,6 +1,7 @@
 port module Main exposing (main)
 
 import Browser
+import Browser.Events
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -8,12 +9,14 @@ import File exposing (File)
 import File.Select as Select
 import Task
 import Process
+import Time
 import Svg exposing (svg)
 import Svg.Attributes as SvgAttr
-import Matching exposing (Results, AssignmentRecord, DistributionRecord, State)
+import Dict exposing (Dict)
+import Matching
+import Solver exposing (SearchState)
 import CsvParser
 import Validate
-import Random
 
 
 -- PORTS
@@ -38,13 +41,16 @@ main =
 type Model
     = NoResults
     | ShowingError String
-    | ShowingResults Results (List String) CopyState
+    | ShowingResults 
+        { warnings : List String
+        , copyState : Maybe CopyType
+        , searchState : SearchState
+        }
 
 
-type alias CopyState =
-    { assignmentsCopied : Bool
-    , summaryCopied : Bool
-    }
+type CopyType
+    = AssignmentsCopied
+    | SummaryCopied
 
 
 init : () -> ( Model, Cmd Msg )
@@ -57,11 +63,10 @@ type Msg
     = UploadRequested
     | FileSelected File
     | FileLoaded String
-    | SolveCompleted Results (List String)
-    | CopyToClipboard
+    | Frame Time.Posix
+    | CopyToClipboard Int
     | CopySummaryToClipboard
     | CopiedMessageHide
-    | SummaryCopiedMessageHide
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -77,67 +82,81 @@ update msg model =
                 Ok inputData ->
                     let
                         validated = Validate.validate inputData
-                        generator = Matching.solve validated.data
+                        search = Solver.initState validated.data
                     in
-                    ( model
-                    , Random.generate (\results -> SolveCompleted results validated.warnings) generator
+                    ( ShowingResults 
+                        { warnings = validated.warnings
+                        , copyState = Nothing
+                        , searchState = search
+                        }
+                    , Cmd.none
                     )
                 
                 Err errorMsg ->
                     ( ShowingError errorMsg, Cmd.none )
-        
-        SolveCompleted results warnings ->
-            ( ShowingResults results warnings { assignmentsCopied = False, summaryCopied = False }
-            , Cmd.none
-            )
-        
-        CopyToClipboard ->
+
+        Frame _ ->
             case model of
-                ShowingResults results warnings copyState ->
-                    ( ShowingResults results warnings { copyState | assignmentsCopied = True }
-                    , Cmd.batch
-                        [ copyToClipboard (formatAssignmentsForCopy results.assignments)
-                        , Process.sleep 2000 |> Task.perform (\_ -> CopiedMessageHide)
-                        ]
-                    )
-                
-                NoResults ->
+                ShowingResults state ->
+                    if Solver.finished state.searchState then
+                        ( model, Cmd.none )
+                    else
+                        let
+                            newSearchState = advanceMany stepsPerFrame state.searchState
+                        in
+                        ( ShowingResults { state | searchState = newSearchState }, Cmd.none )
+
+                _ ->
                     ( model, Cmd.none )
+        
+        
+        CopyToClipboard solutionIndex ->
+            case model of
+                ShowingResults state ->
+                    case Solver.result state.searchState of
+                        Just (_, assignments) ->
+                            case List.head (List.drop solutionIndex assignments) of
+                                Just assignment ->
+                                    ( ShowingResults 
+                                        { state | copyState = Just AssignmentsCopied }
+                                    , Cmd.batch
+                                        [ copyToClipboard (formatAssignmentForCopy assignment)
+                                        , Process.sleep 2000 |> Task.perform (\_ -> CopiedMessageHide)
+                                        ]
+                                    )
+                                
+                                Nothing ->
+                                    ( model, Cmd.none )
+                        
+                        Nothing ->
+                            ( model, Cmd.none )
                 
-                ShowingError _ ->
+                _ ->
                     ( model, Cmd.none )
         
         CopySummaryToClipboard ->
             case model of
-                ShowingResults results warnings copyState ->
-                    ( ShowingResults results warnings { copyState | summaryCopied = True }
-                    , Cmd.batch
-                        [ copyToClipboard (formatDistributionForCopy results.distribution)
-                        , Process.sleep 2000 |> Task.perform (\_ -> SummaryCopiedMessageHide)
-                        ]
-                    )
+                ShowingResults state ->
+                    case Solver.result state.searchState of
+                        Just (dist, _) ->
+                            ( ShowingResults 
+                                { state | copyState = Just SummaryCopied }
+                            , Cmd.batch
+                                [ copyToClipboard (formatDistributionForCopy dist)
+                                , Process.sleep 2000 |> Task.perform (\_ -> CopiedMessageHide)
+                                ]
+                            )
+                        
+                        Nothing ->
+                            ( model, Cmd.none )
                 
-                NoResults ->
-                    ( model, Cmd.none )
-                
-                ShowingError _ ->
+                _ ->
                     ( model, Cmd.none )
         
         CopiedMessageHide ->
             case model of
-                ShowingResults results warnings copyState ->
-                    ( ShowingResults results warnings { copyState | assignmentsCopied = False }, Cmd.none )
-                
-                NoResults ->
-                    ( model, Cmd.none )
-                
-                ShowingError _ ->
-                    ( model, Cmd.none )
-        
-        SummaryCopiedMessageHide ->
-            case model of
-                ShowingResults results warnings copyState ->
-                    ( ShowingResults results warnings { copyState | summaryCopied = False }, Cmd.none )
+                ShowingResults state ->
+                    ( ShowingResults { state | copyState = Nothing }, Cmd.none )
                 
                 NoResults ->
                     ( model, Cmd.none )
@@ -146,27 +165,35 @@ update msg model =
                     ( model, Cmd.none )
 
 
-formatAssignmentsForCopy : List AssignmentRecord -> String
-formatAssignmentsForCopy assignments =
+type alias Assignment = Dict String (String, Int)
+
+formatAssignmentForCopy : Assignment -> String
+formatAssignmentForCopy assignment =
     let
-        header = "Course,Person,Preference Rank"
-        rows = List.map formatAssignmentRow assignments
-        formatAssignmentRow a = a.course ++ "," ++ a.person ++ "," ++ 
-            (case a.rank of
-                Just r -> String.fromInt r
-                Nothing -> "N/A"
-            )
+        header = "Person,Course,Preference Rank"
+        rows = 
+            assignment
+                |> Dict.toList
+                |> List.map (\(person, (course, rank)) ->
+                    person ++ "," ++ course ++ "," ++ String.fromInt rank
+                )
     in
     String.join "\n" (header :: rows)
 
 
-formatDistributionForCopy : List DistributionRecord -> String
-formatDistributionForCopy distribution =
+type alias Dist = Dict Int Int
+
+formatDistributionForCopy : Dist -> String
+formatDistributionForCopy dist =
     let
-        formatDistRow d = 
-            ordinal d.rank ++ " choice: " ++ String.fromInt d.count ++ " " ++ pluralize d.count "person" "people"
+        formatDistRow (rank, count) = 
+            ordinal rank ++ " choice: " ++ String.fromInt count ++ " " ++ pluralize count "person" "people"
     in
-    String.join "\n" (List.map formatDistRow distribution)
+    dist
+        |> Dict.toList
+        |> List.sortBy Tuple.first
+        |> List.map formatDistRow
+        |> String.join "\n"
 
 
 ordinal : Int -> String
@@ -188,8 +215,33 @@ ordinal n =
 -- SUBSCRIPTIONS
 
 subscriptions : Model -> Sub Msg
-subscriptions _ =
-    Sub.none
+subscriptions model =
+    case model of
+        ShowingResults state ->
+            if Solver.finished state.searchState then
+                Sub.none
+            else
+                Browser.Events.onAnimationFrame Frame
+
+        _ ->
+            Sub.none
+
+
+-- Stepping: run multiple `stepState` calls per animation frame
+stepsPerFrame : Int
+stepsPerFrame = 1000
+
+advanceMany : Int -> SearchState -> SearchState
+advanceMany n initialState =
+    if n <= 0 then
+        initialState
+    else
+        case Solver.stepState initialState of
+            Just newState ->
+                advanceMany (n - 1) newState
+
+            Nothing ->
+                initialState
 
 
 -- VIEW
@@ -258,15 +310,15 @@ viewInstructions =
             [ code []
                 [ text "Courses,         Course 1, Course 2, Course 3\n"
                 , text "Number of slots, 2,        1,        1\n"
-                , text "Person A,        *1,       2,        -\n"
+                , text "Person A,        *1,       2,        3\n"
                 , text "Person B,        2,        1,        3\n"
-                , text "Person C,        -,        2,        1\n"
+                , text "Person C,        2,        -,        1\n"
                 , text "Person D,        1,        3,        2"
                 ]
             ]
         , ul []
-            [ li [] [ text "Person A is fixed to Course 1 and cannot be assigned to Course 3" ]
-            , li [] [ text "Person C cannot be assigned to Course 1" ]
+            [ li [] [ text "Person A must be assigned to Course 1" ]
+            , li [] [ text "Person C cannot be assigned to Course 2" ]
             ]
         ]
 
@@ -291,29 +343,69 @@ viewResults model =
                 , p [] [ text errorMsg ]
                 ]
         
-        ShowingResults results warnings copyState ->
-            div [ class "results" ]
-                [ viewWarnings warnings
-                , div [ class "results-content" ]
-                    [ div [ class "distribution-header" ]
-                        [ h3 [ class "distribution-caption" ] [ text "Assignments" ]
-                        , div [ class "copy-container" ]
-                            [ if copyState.assignmentsCopied then
-                                span [ class "copied-message" ] [ text "Copied!" ]
-                              else
-                                text ""
-                            , button [ class "copy-button", onClick CopyToClipboard, title "Copy to clipboard" ]
-                                [ svg [ SvgAttr.width "16", SvgAttr.height "16", SvgAttr.viewBox "0 0 16 16", SvgAttr.fill "currentColor" ]
-                                    [ Svg.path [ SvgAttr.d "M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z" ] []
-                                    , Svg.path [ SvgAttr.d "M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z" ] []
-                                    ]
-                                ]
+        ShowingResults state ->
+            case Matching.tidy (Solver.result state.searchState) of
+                Nothing ->
+                    if Solver.finished state.searchState then
+                        div [ class "error" ]
+                            [ h3 [] [ text "No solution found" ]
+                            , p [] [ text "Unable to create a valid assignment with the given constraints. Try removing some constraints." ]
+                            ]
+                    else
+                        viewProgress state.searchState
+                
+                Just (dist, assignments) ->
+                    div [ class "results" ]
+                        [ if Solver.finished state.searchState then
+                            text ""
+                          else
+                            viewProgress state.searchState
+                        , viewWarnings state.warnings
+                        , if List.length assignments > 1 then
+                            div [ class "solution-count-header" ]
+                                [ text ("Found " ++ String.fromInt (List.length assignments) ++ " solutions tied for first place") ]
+                          else
+                            text ""
+                        , viewDistribution dist state.copyState
+                        , div [] (List.indexedMap (viewSingleAssignment state.copyState) assignments)
+                        ]
+
+
+viewSingleAssignment : Maybe CopyType -> Int -> Assignment -> Html Msg
+viewSingleAssignment copyState index assignment =
+    let
+        showAssignmentCopied = 
+            case copyState of
+                Just AssignmentsCopied -> True
+                _ -> False
+        
+        solutionHeader =
+            if index > 0 then
+                h2 [ class "solution-header" ] [ text ("Variation " ++ String.fromInt index) ]
+            else
+                text ""
+    in
+    div [ class "single-solution" ]
+        [ solutionHeader
+        , div [ class "results-content" ]
+            [ div [ class "distribution-header" ]
+                [ h3 [ class "distribution-caption" ] [ text "Assignments" ]
+                , div [ class "copy-container" ]
+                    [ if showAssignmentCopied then
+                        span [ class "copied-message" ] [ text "Copied!" ]
+                      else
+                        text ""
+                    , button [ class "copy-button", onClick (CopyToClipboard index), title "Copy to clipboard" ]
+                        [ svg [ SvgAttr.width "16", SvgAttr.height "16", SvgAttr.viewBox "0 0 16 16", SvgAttr.fill "currentColor" ]
+                            [ Svg.path [ SvgAttr.d "M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z" ] []
+                            , Svg.path [ SvgAttr.d "M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z" ] []
                             ]
                         ]
-                    , viewAssignmentsTable results.assignments
                     ]
-                , viewDistribution results.distribution copyState.summaryCopied
                 ]
+            , viewAssignmentsTable assignment
+            ]
+        ]
 
 
 viewWarnings : List String -> Html Msg
@@ -327,8 +419,14 @@ viewWarnings warnings =
             ]
 
 
-viewDistribution : List DistributionRecord -> Bool -> Html Msg
-viewDistribution dist showCopied =
+viewDistribution : Dist -> Maybe CopyType -> Html Msg
+viewDistribution dist copyState =
+    let
+        showCopied = 
+            case copyState of
+                Just SummaryCopied -> True
+                _ -> False
+    in
     div [ class "distribution" ]
         [ div [ class "distribution-header" ]
             [ h3 [ class "distribution-caption" ] [ text "Preference Distribution" ]
@@ -353,16 +451,29 @@ viewDistribution dist showCopied =
                     ]
                 ]
             , tbody []
-                (List.map viewDistributionItem dist)
+                (dist
+                    |> Dict.toList
+                    |> List.sortBy Tuple.first
+                    |> List.map viewDistributionItem
+                )
             ]
         ]
 
 
-viewDistributionItem : DistributionRecord -> Html Msg
-viewDistributionItem d =
+viewProgress : SearchState -> Html Msg
+viewProgress _ =
+    div [ class "progress-container" ]
+        [ div [ class "progress-message" ] [ text "Searching..." ]
+        , div [ class "progress-bar-container" ]
+            [ div [ class "progress-bar indeterminate" ] [] ]
+        ]
+
+
+viewDistributionItem : (Int, Int) -> Html Msg
+viewDistributionItem (rank, count) =
     tr []
-        [ td [] [ text (ordinal d.rank) ]
-        , td [] [ text (String.fromInt d.count) ]
+        [ td [] [ text (ordinal rank) ]
+        , td [] [ text (String.fromInt count) ]
         ]
 
 
@@ -371,30 +482,31 @@ pluralize n singular plural =
     if n == 1 then singular else plural
 
 
-viewAssignmentsTable : List AssignmentRecord -> Html Msg
-viewAssignmentsTable assignments =
+viewAssignmentsTable : Assignment -> Html Msg
+viewAssignmentsTable assignment =
     table [ class "results-table" ]
         [ thead []
             [ tr []
-                [ th [] [ text "Course" ]
-                , th [] [ text "Person" ]
+                [ th [] [ text "Person" ]
+                , th [] [ text "Course" ]
                 , th [] [ text "Preference Rank" ]
                 ]
             ]
         , tbody []
-            (List.map viewAssignmentRow assignments)
+            (assignment
+                |> Dict.toList
+                |> List.sortBy (\(person, (course, _)) -> (course, person))
+                |> List.map viewAssignmentRow
+            )
         ]
 
 
-viewAssignmentRow : AssignmentRecord -> Html Msg
-viewAssignmentRow assignment =
+viewAssignmentRow : (String, (String, Int)) -> Html Msg
+viewAssignmentRow (person, (course, rank)) =
     tr []
-        [ td [] [ text assignment.course ]
-        , td [] [ text assignment.person ]
-        , td [] [ text (case assignment.rank of
-                            Just r -> String.fromInt r
-                            Nothing -> "N/A"
-                        ) ]
+        [ td [] [ text person ]
+        , td [] [ text course ]
+        , td [] [ text (String.fromInt rank) ]
         ]
 
 
@@ -746,11 +858,54 @@ viewStyles =
             padding-right: 10px;
             box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
         }
+
+        .progress-bar.indeterminate {
+            width: 40%;
+            background: linear-gradient(90deg, rgba(255,255,255,0.15), rgba(255,255,255,0.45), rgba(255,255,255,0.15));
+            animation: indeterminate 1.2s infinite linear;
+            transform: translateX(-150%);
+        }
+
+        @keyframes indeterminate {
+            0% { transform: translateX(-150%); }
+            50% { transform: translateX(50%); }
+            100% { transform: translateX(150%); }
+        }
         
         .progress-text {
             color: #2c3e50;
             font-size: 1.1em;
             margin-top: 10px;
             font-weight: 500;
+        }
+        
+        .solution-count-header {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            color: #0366d6;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .single-solution {
+            margin-bottom: 40px;
+        }
+        
+        .single-solution:not(:last-child) {
+            padding-bottom: 40px;
+            border-bottom: 3px solid #e1e4e8;
+        }
+        
+        .solution-header {
+            color: #0366d6;
+            font-size: 1.5em;
+            margin: 0 0 20px 0;
+            padding: 12px 16px;
+            background: #f6f8fa;
+            border-left: 4px solid #0366d6;
+            border-radius: 4px;
         }
     """ ]
